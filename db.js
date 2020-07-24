@@ -90,12 +90,19 @@ exports.createRoute = ({
     ]);
 };
 
-exports.readRoute = ({ user_id, id, name }) => {
+exports.readRoutes = ({ user_id }) => {
+    const query = `SELECT * 
+                  FROM routes 
+                  WHERE user_id = $1;`;
+    return db.query(query, [user_id]);
+};
+
+exports.readRoute = ({ user_id, id }) => {
     const query = `SELECT * 
                   FROM routes 
                   WHERE user_id = $1 
-                    AND (id = $2 OR name = $3);`;
-    return db.query(query, [user_id, id || "", name || ""]);
+                    AND id = $2;`;
+    return db.query(query, [user_id, id || ""]);
 };
 
 exports.updateRoute = ({
@@ -127,18 +134,24 @@ exports.updateRoute = ({
     ]);
 };
 
-exports.deleteRoute = ({ id, name, user_id }) => {
+exports.deleteRoute = ({ id, user_id }) => {
     const query = `DELETE FROM routes 
-                   WHERE (id = $1 OR name = $2)
+                   WHERE id = $1
                     AND user_id = $3`;
-    return db.query(query, [id, name, user_id]);
+    return db.query(query, [id, user_id]);
 };
 
 // PLACES
-exports.createPlace = ({ name, lat, lng, tags }) => {
-    const query = `INSERT INTO places (name, lat, lng, tags) 
-                   VALUES ($1, $2, $3, $4) RETURNING *;`;
-    return db.query(query, [name, lat, lng, tags]);
+exports.createPlace = ({ name, lat, lng, tags, is_natural }) => {
+    const query = `INSERT INTO places (name, lat, lng, tags, is_natural) 
+                   VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
+    return db.query(query, [name, lat, lng, tags, is_natural]);
+};
+
+exports.readPlaces = () => {
+    const query = `SELECT * 
+                  FROM places;`;
+    return db.query(query);
 };
 
 exports.readPlace = ({ id }) => {
@@ -169,11 +182,19 @@ exports.createImage = ({ image, place_id }) => {
     return db.query(query, [image, place_id]);
 };
 
-exports.readImage = ({ id, place_id }) => {
+exports.readPlaceImages = ({ place_id }) => {
     const query = `SELECT * 
                   FROM images 
-                  WHERE id = $1 OR place_id = $2;`;
-    return db.query(query, [id || "", place_id || ""]);
+                  WHERE place_id = $1;`;
+    return db.query(query, [place_id]);
+};
+
+exports.readRouteImages = ({ id }) => {
+    const query = `SELECT routes.id, place_id, image 
+                  FROM images
+                  LEFT JOIN routes ON place_id = ANY(routes.places)
+                  WHERE routes.id = $1;`;
+    return db.query(query, [id]);
 };
 
 exports.deleteImage = ({ id, place_id }) => {
@@ -189,11 +210,21 @@ exports.createReview = ({ place_id, route_id, text, rating }) => {
     return db.query(query, [place_id || "", route_id || "", text, rating]);
 };
 
-exports.readReview = ({ id, place_id, route_id }) => {
+exports.readReviews = ({ place_id, route_id }) => {
     const query = `SELECT * 
                   FROM reviews 
-                  WHERE id = $1 OR place_id = $2 OR route_id = $3;`;
-    return db.query(query, [id, place_id, route_id]);
+                  WHERE place_id = $1 OR route_id = $2;`;
+    return db.query(query, [place_id, route_id]);
+};
+
+exports.readRouteReviews = ({ id }) => {
+    const query = `SELECT routes.id, place_id, text, rating 
+                  FROM reviews
+                  LEFT JOIN routes 
+                    ON place_id = ANY(routes.places) 
+                        OR routes.id = reviews.route_id
+                  WHERE routes.id = $1;`;
+    return db.query(query, [id]);
 };
 
 exports.updateReview = ({ id, text, rating }) => {

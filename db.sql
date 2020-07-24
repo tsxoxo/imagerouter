@@ -12,10 +12,12 @@ CREATE TABLE users(
 DROP TABLE places IF EXISTS;
 CREATE TABLE places(
     id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
     lat NUMERIC(14, 11) NOT NULL,
     lng NUMERIC(14, 11) NOT NULL,
     tags TEXT [],
+    is_natural BOOLEAN NOT NULL,
+    radius INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -35,6 +37,9 @@ DROP TABLE images IF EXISTS;
 CREATE TABLE images(
     id SERIAL PRIMARY KEY,
     image TEXT NOT NULL,
+    title TEXT,
+    lat NUMERIC(14, 11) NOT NULL,
+    lng NUMERIC(14, 11) NOT NULL,
     place_id VARCHAR(255) REFERENCES places(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
