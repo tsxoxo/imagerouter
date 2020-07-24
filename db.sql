@@ -1,3 +1,4 @@
+DROP TABLE users IF EXISTS;
 CREATE TABLE users(
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -6,21 +7,23 @@ CREATE TABLE users(
       password VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       location VARCHAR(255)
-      )
+      );
 
+DROP TABLE places IF EXISTS;
 CREATE TABLE places(
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     lat NUMERIC(14, 11) NOT NULL,
     lng NUMERIC(14, 11) NOT NULL,
-    tag VARCHAR(255),
+    tags TEXT [],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE routes IF EXISTS;
 CREATE TABLE routes(
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    user_id INT NOT NULL REFERENCES users(id),
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     places TEXT [] NOT NULL,
     duration INT NOT NULL,
     distance FLOAT NOT NULL,
@@ -28,31 +31,26 @@ CREATE TABLE routes(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE images IF EXISTS;
 CREATE TABLE images(
     id SERIAL PRIMARY KEY,
     image TEXT NOT NULL,
-    place_id VARCHAR(255) REFERENCES places(id),
+    place_id VARCHAR(255) REFERENCES places(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE reviews IF EXISTS;
 CREATE TABLE reviews(
     id SERIAL PRIMARY KEY,
-    place_id VARCHAR(255) REFERENCES places(id),
-    route_name INT REFERENCES routes(id),
-    review_text TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT one_not_null CHECK (num_nonnulls(place_id, route_name) = 1)
-);
-
-CREATE TABLE ratings(
-    id SERIAL PRIMARY KEY,
-    place_id VARCHAR(255) REFERENCES places(id),
-    route_name INT REFERENCES routes(id),
+    place_id VARCHAR(255) REFERENCES places(id) ON DELETE CASCADE,
+    route_id INT REFERENCES routes(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
     rating INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT one_not_null CHECK (num_nonnulls(place_id, route_name) = 1)
+    CONSTRAINT one_not_null CHECK (num_nonnulls(place_id, route_id) = 1)
 );
 
+DROP TABLE reset_codes IF EXISTS;
 CREATE TABLE reset_codes(
   id SERIAL PRIMARY KEY,
   email VARCHAR NOT NULL,
