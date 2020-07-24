@@ -142,16 +142,21 @@ exports.deleteRoute = ({ id, user_id }) => {
 };
 
 // PLACES
-exports.createPlace = ({ name, lat, lng, tags, is_natural }) => {
-    const query = `INSERT INTO places (name, lat, lng, tags, is_natural) 
-                   VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
-    return db.query(query, [name, lat, lng, tags, is_natural]);
+exports.createPlace = ({ name, lat, lng, tags, is_natural, id }) => {
+    const query = `INSERT INTO places (name, lat, lng, tags, is_natural, id) 
+                   VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`;
+    return db.query(query, [name, lat, lng, tags, is_natural, id]);
 };
 
-exports.readPlaces = () => {
-    const query = `SELECT * 
-                  FROM places;`;
-    return db.query(query);
+exports.readPlaces = ({ places }) => {
+    let query = `SELECT * 
+                  FROM places`;
+    query = places
+        ? query + ` WHERE id = ANY(ARRAY($1));`
+        : query + ` WHERE $1 = $1`;
+    console.log("readPlaces", query);
+
+    return db.query(query, [places || []]);
 };
 
 exports.readPlace = ({ id }) => {
@@ -182,11 +187,11 @@ exports.createImage = ({ image, place_id }) => {
     return db.query(query, [image, place_id]);
 };
 
-exports.readPlaceImages = ({ place_id }) => {
+exports.readPlaceImages = ({ place_id, places }) => {
     const query = `SELECT * 
                   FROM images 
-                  WHERE place_id = $1;`;
-    return db.query(query, [place_id]);
+                  WHERE place_id = $1 OR place_id = ANY(ARRAY(${places}));`;
+    return db.query(query, [place_id, places || []]);
 };
 
 exports.readRouteImages = ({ id }) => {
