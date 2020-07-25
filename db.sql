@@ -17,7 +17,7 @@ CREATE TABLE places(
     lng NUMERIC(14, 11) NOT NULL,
     tags TEXT [],
     is_natural BOOLEAN NOT NULL,
-    radius INT,
+    radius FLOAT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -35,13 +35,13 @@ CREATE TABLE routes(
 
 DROP TABLE IF EXISTS images CASCADE;
 CREATE TABLE images(
-    id SERIAL PRIMARY KEY,
-    image TEXT NOT NULL,
+    image TEXT NOT NULL UNIQUE,
     title TEXT,
     lat NUMERIC(14, 11) NOT NULL,
     lng NUMERIC(14, 11) NOT NULL,
-    place_id VARCHAR(255) REFERENCES places(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    place_id VARCHAR(255) NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(image, place_id)
 );
 
 DROP TABLE IF EXISTS reviews CASCADE;
