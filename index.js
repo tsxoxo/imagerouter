@@ -4,26 +4,30 @@ const compression = require("compression");
 const csurf = require("csurf");
 const cookieSession = require("cookie-session");
 const helmet = require("helmet");
+const path = require("path");
+
 const { uploadFileS3, deleteFolderS3 } = require("./s3");
 const { uploader } = require("./multer");
-const cors = require("cors");
-require("dotenv").config();
-
 const db = require("./db");
+
 // routers
 const authRouter = require("./routes/auth");
 const placesRouter = require("./routes/places");
 const routesRouter = require("./routes/routes");
 
+require("dotenv").config();
+
 const cookieSessionMiddleware = cookieSession({
     secret: process.env.COOKIE_SECRET,
     maxAge: 1000 * 60 * 60 * 24 * 14,
 });
+
 app.use(compression());
 app.use(express.json());
 app.use(helmet());
 app.use(cookieSessionMiddleware);
-app.use(express.static("public"));
+
+app.use(express.static(path.join(__dirname, "build")));
 
 app.use(
     express.urlencoded({
@@ -37,8 +41,6 @@ app.use(function (req, res, next) {
     res.cookie("mytoken", req.csrfToken());
     next();
 });
-app.use(cors());
-app.use("/bundle.js", (req, res) => res.sendFile(`${__dirname}/bundle.js`));
 
 // USER
 app.get("/api/user/:user_id", async (req, res) => {
@@ -64,9 +66,7 @@ app.delete("/api/user/:user_id", deleteFolderS3, async (req, res) => {
         .then(() => {
             db.deleteUser({ user_id: req.params.user_id })
                 .then(() => {
-                    // remove session cookie
                     req.session = null;
-                    // redirect to "/"
                     return res.sendStatus(204);
                 })
                 .catch((err) => {
@@ -81,7 +81,7 @@ app.delete("/api/user/:user_id", deleteFolderS3, async (req, res) => {
 });
 
 // MISCELLANEOUS
-app.post("/upload", uploader.single("image"), uploadFileS3, (req, res) => {
+app.post("/api/upload", uploader.single("image"), uploadFileS3, (req, res) => {
     if (req.file) {
         const { filename } = req.file;
         const image = `${process.env.S3_URL + req.session.userId}/${filename}`;
@@ -95,11 +95,15 @@ app.post("/upload", uploader.single("image"), uploadFileS3, (req, res) => {
     }
 });
 
-app.use("/place", placesRouter);
+app.use("/api/place", placesRouter);
 
-app.use("/auth", authRouter);
+app.use("/api/auth", authRouter);
 
-app.use("/route", routesRouter);
+app.use("/api/route", routesRouter);
+
+app.get("/*", function (req, res) {
+    res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 app.listen(process.env.PORT || 8080, function () {
     console.log("I'm listening.");
