@@ -4,7 +4,6 @@ const db = require("../db");
 const { sendEmail } = require("../ses");
 const cryptoRandomString = require("crypto-random-string");
 
-// AUTH
 router.post("/login", (req, res) => {
     return db.readUser({ email: req.body.email }).then((data) => {
         if (data.rowCount > 0) {

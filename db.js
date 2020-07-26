@@ -9,7 +9,7 @@ if (process.env.DATABASE_URL) {
     );
 }
 
-// USER
+/////////////////// USERS ///////////////////////
 exports.createUser = ({ name, email, password }) => {
     const query = `INSERT INTO users (name, email, password) 
                    VALUES ($1, $2, $3) RETURNING *;`;
@@ -50,7 +50,7 @@ exports.deleteUser = ({ user_id }) => {
     return db.query(query, [user_id]);
 };
 
-// RESET CODES
+/////////////////// RESET CODES ///////////////////////
 exports.createToken = ({ email, code }) => {
     const query = `INSERT INTO reset_codes (email, code) 
                    VALUES ($1, $2) RETURNING *;`;
@@ -69,7 +69,7 @@ exports.deleteToken = ({ id }) => {
     return db.query(query, [id]);
 };
 
-// ROUTES
+/////////////////// ROUTES ///////////////////////
 exports.createRoute = ({
     name,
     user_id,
@@ -141,8 +141,8 @@ exports.deleteRoute = ({ id, user_id }) => {
     return db.query(query, [id, user_id]);
 };
 
-// PLACES
-exports.getPlaces = ({ places, images }) => {
+/////////////////// PLACES ///////////////////////
+exports.getRequestedPlacesAndImages = ({ places, images }) => {
     let query = `SELECT places.*, 
                         images.lat as img_lat, 
                         images.lng as img_lng, 
@@ -193,7 +193,7 @@ exports.deletePlace = ({ id }) => {
     return db.query(query, [id]);
 };
 
-// IMAGES
+/////////////////// IMAGES ///////////////////////
 exports.createImage = ({ image, place_id, lat, lng, title }) => {
     const query = `INSERT INTO images (image, place_id, lat, lng, title) 
                    VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
@@ -217,7 +217,7 @@ exports.readPlaceImages = ({ place_id }) => {
 exports.readPlacesImages = ({ places }) => {
     let query = `SELECT * 
                   FROM images
-                  WHERE  place_id = ANY($1)`;
+                  WHERE place_id = ANY($1)`;
     return db.query(query, [places]);
 };
 
@@ -235,7 +235,7 @@ exports.deleteImage = ({ id, place_id }) => {
     return db.query(query, [id || "", place_id || ""]);
 };
 
-// REVIEWS
+/////////////////// REVIEWS ///////////////////////
 exports.createReview = ({ place_id, route_id, text, rating }) => {
     const query = `INSERT INTO reviews (place_id, route_id, text, rating) 
                    VALUES ($1, $2, $3, $4) RETURNING *;`;

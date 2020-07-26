@@ -1,8 +1,7 @@
 const router = require("express").Router();
 const db = require("../db");
 
-// ROUTES
-router.get("/route", async (req, res) => {
+router.get("/", async (req, res) => {
     try {
         const { rows } = await db.readRoutes({ user_id: req.session.userId });
         return res.json(rows);
@@ -11,7 +10,7 @@ router.get("/route", async (req, res) => {
     }
 });
 
-router.post("/route", async (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const { name, places, duration, distance, thumbnail } = req.body;
         const { rows } = await db.createRoute({
@@ -28,7 +27,7 @@ router.post("/route", async (req, res) => {
     }
 });
 
-router.get("/route/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
         const { rows } = await db.readRoute({
             user_id: req.session.userId,
@@ -40,7 +39,7 @@ router.get("/route/:id", async (req, res) => {
     }
 });
 
-router.get("/route/:id/images", async (req, res) => {
+router.get("/:id/images", async (req, res) => {
     try {
         const { rows } = await db.readRouteImages({
             id: req.params.id,
@@ -51,7 +50,7 @@ router.get("/route/:id/images", async (req, res) => {
     }
 });
 
-router.get("/route/:id/reviews", async (req, res) => {
+router.get("/:id/reviews", async (req, res) => {
     try {
         const { rows } = await db.readRouteReviews({
             id: req.params.id,
@@ -62,7 +61,7 @@ router.get("/route/:id/reviews", async (req, res) => {
     }
 });
 
-router.post("/route/:id", async (req, res) => {
+router.post("/:id", async (req, res) => {
     try {
         const { name, places, duration, distance, thumbnail } = req.body;
         const { rows } = await db.updateRoute({
@@ -80,7 +79,7 @@ router.post("/route/:id", async (req, res) => {
     }
 });
 
-router.post("/route/:id/review", async (req, res) => {
+router.post("/:id/review", async (req, res) => {
     try {
         const { text, rating } = req.body;
         const { rows } = await db.createReview({
@@ -94,7 +93,7 @@ router.post("/route/:id/review", async (req, res) => {
     }
 });
 
-router.delete("/route/:id", async (req, res) => {
+router.delete("/:id", async (req, res) => {
     try {
         await db.deleteRoute({
             id: req.params.id,

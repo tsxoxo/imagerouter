@@ -1,13 +1,12 @@
 const router = require("express").Router();
 const db = require("../db");
-const { distance, isSuperset, eqSet } = require("../utils");
+const { distance, isSuperset, eqSet, sleep } = require("../utils");
 const cryptoRandomString = require("crypto-random-string");
 
-// PLACES
 router.get("/", async (req, res) => {
     try {
-        const { rows } = await db.readPlaces();
-        return res.json(rows[0]);
+        const { rows } = await db.readPlaces({});
+        return res.json(rows);
     } catch (err) {
         console.log(err);
     }
@@ -15,7 +14,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
     // get data from frontend
-    // [[GOOGLE POINTS],[FLICKR IMAGES]]
+    // {points: [GOOGLE POINTS], images: [FLICKR IMAGES]}
     const allPoints = {
         places: req.body.points.map((place) => place.place_id),
         images: req.body.images.map((image) => image.url_m),
@@ -122,7 +121,6 @@ router.post("/", async (req, res) => {
             }
         });
     });
-    console.log("[...newClusteredPoints]", [...newClusteredPoints]);
 
     // find which clusters are subsets that need removal
     const clustersToRemove = new Set();
@@ -202,22 +200,21 @@ router.post("/", async (req, res) => {
         }
     });
 
-    function sleep(milliseconds) {
-        const date = Date.now();
-        let currentDate = null;
-        do {
-            currentDate = Date.now();
-        } while (currentDate - date < milliseconds);
-    }
-
+    // due to the async calls for adding the images to places
+    // not really stopping on the await, sleep just to make sure all
+    // of them are added before getting all places
     sleep(5000);
-    const allPoinstData = await db.getPlaces(allPoints);
+    const allPoinstData = await db.getRequestedPlacesAndImages(allPoints);
 
     return res.json(allPoinstData.rows);
 });
 
 router.get("/:id", async (req, res) => {
     try {
+        const { rows } = await db.readPlace({
+            id: req.params.id,
+        });
+        return res.json(rows[0]);
     } catch (err) {
         console.log(err);
     }
