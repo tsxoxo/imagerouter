@@ -25,3 +25,11 @@ exports.eqSet = (as, bs) => {
     for (var a of as) if (!bs.has(a)) return false;
     return true;
 };
+
+export function sleep(milliseconds) {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+        currentDate = Date.now();
+    } while (currentDate - date < milliseconds);
+}
