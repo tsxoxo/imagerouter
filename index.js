@@ -18,6 +18,7 @@ const routesRouter = require("./routes/routes");
 require("dotenv").config();
 
 const cookieSessionMiddleware = cookieSession({
+    keys: ["key1", "key2"],
     secret: process.env.COOKIE_SECRET,
     maxAge: 1000 * 60 * 60 * 24 * 14,
 });
@@ -69,12 +70,12 @@ app.delete("/api/user/:user_id", deleteFolderS3, async (req, res) => {
                     req.session = null;
                     return res.sendStatus(204);
                 })
-                .catch((err) => {
+                .catch(err => {
                     console.log(err);
                     return res.sendStatus("500");
                 });
         })
-        .catch((err) => {
+        .catch(err => {
             console.log(err);
             return res.sendStatus("500");
         });
