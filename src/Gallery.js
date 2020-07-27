@@ -14,13 +14,16 @@ const useStyles = makeStyles(theme => ({
         display: "flex",
         flexWrap: "wrap",
         justifyContent: "space-around",
-        overflow: "hidden",
+        overflowY: "scroll",
+        overflowX: "hidden",
         backgroundColor: theme.palette.background.paper,
+        height: "94vh",
     },
     gridList: {
-        flexWrap: "nowrap",
+        // flexWrap: "nowrap",
         // Promote the list into his own layer on Chrome. This cost memory but helps keeping high FPS.
         transform: "translateZ(0)",
+        height: "100%",
     },
     title: {
         color: theme.palette.primary.light,
@@ -29,18 +32,44 @@ const useStyles = makeStyles(theme => ({
         background:
             "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)",
     },
+    highlightOnHover: {
+        boxSizing: "border-box",
+        border: "15px lime solid",
+        // boxShadow: "0px 0px 0px 10px black inset",
+    },
 }));
 
-const Gallery = () => {
+const Gallery = props => {
+    const places = props.places;
     const classes = useStyles();
+
+    useEffect(() => {
+        console.log("props.hovered", props.hoveredMapPointIndex);
+    }, [props.hoveredMapPointIndex]);
 
     return (
         <div className={classes.root}>
-            <GridList className={classes.gridList} cols={1.5}>
-                {mock_api_places_response.map((place, ind) => {
+            <GridList cellHeight={320} className={classes.gridList} cols={1}>
+                {places.map((place, ind) => {
                     return place.img_url ? (
-                        <GridListTile key={ind}>
-                            <img src={place.img_url} alt={place.img_title} />
+                        <GridListTile
+                            key={ind}
+                            onMouseEnter={() =>
+                                props.handleGalleryItemMouseEnter(ind)
+                            }
+                            onMouseLeave={() =>
+                                props.handleGalleryItemMouseLeave(ind)
+                            }
+                        >
+                            <img
+                                src={place.img_url}
+                                alt={place.img_title}
+                                className={
+                                    ind === props.hoveredMapPointIndex
+                                        ? classes.highlightOnHover
+                                        : {}
+                                }
+                            />
                             <GridListTileBar
                                 title={place.img_title}
                                 classes={{
@@ -65,4 +94,5 @@ const Gallery = () => {
     );
 };
 
-export default Gallery;
+export default React.memo(Gallery);
+// export default Gallery;
