@@ -9,34 +9,16 @@ import {
 } from "@react-google-maps/api";
 import axios from "axios";
 import search_nearby_mock_data from "./searchNearbyMock";
+import mock_api_places_response from "./mockApiPlaceRes";
 
 let _axios = axios.create({
     xsrfCookieName: "mytoken",
     xsrfHeaderName: "csrf-token",
 });
 
-const random_point_berlin = [
-    {
-        lat: 52.4071663,
-        lng: 13.019338,
-        place_id: "ChIJuxIUGCz0qEcR6_83JFlaPVs",
-    },
-    {
-        lat: 52.53966880000001,
-        lng: 13.291221,
-        place_id: "ChIJmev6p7RWqEcRfOq30fe7A24",
-    },
-    {
-        lat: 52.2744965,
-        lng: 13.4394871,
-        place_id: "ChIJ7SfbtHRqqEcR7NGP0xVztJI",
-    },
-    { lat: 52.541712, lng: 13.932145, place_id: "ChIJySTpuWgtqEcRJsshIT18980" },
-];
-
 const containerStyle = {
-    width: "800px",
-    height: "800px",
+    width: "100%",
+    height: "100%",
 };
 const center = {
     lat: 52.4071663,
@@ -55,6 +37,7 @@ const Map = () => {
     const [directions, setDirections] = useState(null);
     const [photos, setPhotos] = useState([]);
     const [places, setPlaces] = useState([]);
+    const [allPoints, setAllPoints] = useState([]);
     const [clickedPlaceIndex, setClickedPlaceIndex] = useState(-1);
     const [startingPoint, setStartingPoint] = useState({});
     const directionsCallback = response => {
@@ -92,7 +75,7 @@ const Map = () => {
         visible: true,
         zIndex: 1,
     };
-    const onMapClick = ({ latLng }) => {
+    const onMapClick = async ({ latLng }) => {
         setStartingPoint({
             lat: latLng.lat(),
             lng: latLng.lng(),
@@ -141,11 +124,13 @@ const Map = () => {
             );
             // extras=owner_name%2Cdate_taken%2Cviews%2Ctags%2Cgeo%2Curl_o%2Curl_m
             setPhotos(photosArr);
+
+            // return photosArr;
         }
 
         async function fetchGoogleMaps() {
             const NearbySearchService = new window.google.maps.places.PlacesService(
-                // document.getElementsByClassName("mapContaineer")[0]
+                // document.getElementsByClassName("mapContainer")[0]
                 document.getElementById("foo")
             );
             const request = {
@@ -160,14 +145,71 @@ const Map = () => {
                     status == window.google.maps.places.PlacesServiceStatus.OK
                 ) {
                     setPlaces(results);
+                    // return results;
                 }
             };
-            NearbySearchService.nearbySearch(request, callback);
+            await NearbySearchService.nearbySearch(request, callback);
         }
-        setPlaces(search_nearby_mock_data);
-        // fetchGoogleMaps();
-        // fetchFlickr();
+        // setPlaces(search_nearby_mock_data);
+        // setPlaces(fetchGoogleMaps());
+        // setPhotos(fetchFlickr());
+
+        fetchGoogleMaps();
+        fetchFlickr();
+
+        setAllPoints(mock_api_places_response);
     }, [startingPoint]);
+
+    useEffect(() => {
+        if (photos.length > 0 && places.length > 0) {
+            (async () => {
+                console.log("Places.length:", places.length);
+                console.log("POINTS:", places);
+                const { data: allPoints } = await _axios.post("/api/place", {
+                    points: places,
+                    images: photos.slice(0, 25),
+                });
+                setAllPoints(allPoints);
+                console.log(JSON.stringify(allPoints[0]));
+            })();
+        }
+    }, [photos, places]);
+
+    const renderAllPoints = () => {
+        return allPoints.map((point, ind) => {
+            const pointCenter = {
+                lat: Number(point.lat),
+                lng: Number(point.lng),
+            };
+            if (point.is_natural === true) {
+                return (
+                    <Marker
+                        key={ind}
+                        position={pointCenter}
+                        // onClick={() => onMarkerClick(ind)}
+                    />
+                );
+            } else {
+                // console.log("### ", ind);
+                const radius = point.radius * 1000 + 200;
+                // const radius = 1000;
+                const options = { ...photoPointOptions, radius };
+                // ind === 19 &&
+                //     console.log(`${ind}: ${JSON.stringify(pointCenter)}`);
+
+                return (
+                    <Circle
+                        key={
+                            point.img_lat + point.img_lng + point.img_url || ind
+                        }
+                        center={pointCenter}
+                        options={options}
+                        onClick={e => console.log(ind)}
+                    />
+                );
+            }
+        });
+    };
 
     if (loadError) return "Error";
     if (!isLoaded) return "Loading...";
@@ -177,15 +219,32 @@ const Map = () => {
             mapContainerStyle={containerStyle}
             mapContainerClassName="mapContainer"
             center={center}
-            zoom={12}
+            zoom={10}
             onClick={e => onMapClick(e)}
         >
             <div
                 id="foo"
                 style={{ width: "0px", height: "0px", display: "none" }}
             ></div>
-            {renderInfoWindow()}
-            {places.length > 0 &&
+            {/* {renderInfoWindow()} */}
+            {/* {allPoints.length &&
+                allPoints.map((point, ind) => {
+                    const pointCenter = {
+                        lat: Number(point.lat),
+                        lng: Number(point.lng),
+                    };
+                    if (point.is_natural !== true) {
+                        return (
+                            <Marker
+                                key={ind}
+                                position={pointCenter}
+                                // onClick={() => onMarkerClick(ind)}
+                            />
+                        );
+                    }
+                })} */}
+            {allPoints.length && renderAllPoints()}
+            {/* {places.length > 0 &&
                 places.map((place, ind) => {
                     return (
                         <Marker
@@ -194,8 +253,8 @@ const Map = () => {
                             onClick={() => onMarkerClick(ind)}
                         />
                     );
-                })}
-            {random_point_berlin.map(point => {
+                })} */}
+            {/* {random_point_berlin.map(point => {
                 const pointCenter = {
                     lat: point.lat,
                     lng: point.lng,
@@ -211,7 +270,7 @@ const Map = () => {
                         onClick={e => console.log(point.place_id)}
                     />
                 );
-            })}
+            })} */}
 
             {directions !== null && (
                 <DirectionsRenderer

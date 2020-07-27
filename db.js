@@ -4,9 +4,10 @@ let db;
 if (process.env.DATABASE_URL) {
     db = spicedPg(process.env.DATABASE_URL);
 } else {
-    db = spicedPg(
-        `postgres:${process.env.AWS_POSTGRES_USERNAME}:${process.env.AWS_POSTGRES_PASSWORD}:@${process.env.AWS_POSTGRES_HOST}:5432/postgres`
-    );
+    // db = spicedPg(
+    //     `postgres:${process.env.AWS_POSTGRES_USERNAME}:${process.env.AWS_POSTGRES_PASSWORD}:@${process.env.AWS_POSTGRES_HOST}:5432/postgres`
+    // );
+    db = spicedPg(`postgres:postgres:postgress@localhost:5432/imagerouter`);
 }
 
 /////////////////// USERS ///////////////////////
