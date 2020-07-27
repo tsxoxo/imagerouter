@@ -9,7 +9,7 @@ if (process.env.DATABASE_URL) {
     );
 }
 
-// USER
+/////////////////// USERS ///////////////////////
 exports.createUser = ({ name, email, password }) => {
     const query = `INSERT INTO users (name, email, password) 
                    VALUES ($1, $2, $3) RETURNING *;`;
@@ -50,7 +50,7 @@ exports.deleteUser = ({ user_id }) => {
     return db.query(query, [user_id]);
 };
 
-// RESET CODES
+/////////////////// RESET CODES ///////////////////////
 exports.createToken = ({ email, code }) => {
     const query = `INSERT INTO reset_codes (email, code) 
                    VALUES ($1, $2) RETURNING *;`;
@@ -69,7 +69,7 @@ exports.deleteToken = ({ id }) => {
     return db.query(query, [id]);
 };
 
-// ROUTES
+/////////////////// ROUTES ///////////////////////
 exports.createRoute = ({
     name,
     user_id,
@@ -141,17 +141,35 @@ exports.deleteRoute = ({ id, user_id }) => {
     return db.query(query, [id, user_id]);
 };
 
-// PLACES
-exports.createPlace = ({ name, lat, lng, tags, is_natural }) => {
-    const query = `INSERT INTO places (name, lat, lng, tags, is_natural) 
-                   VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
-    return db.query(query, [name, lat, lng, tags, is_natural]);
+/////////////////// PLACES ///////////////////////
+exports.getRequestedPlacesAndImages = ({ places, images }) => {
+    let query = `SELECT places.*, 
+                        images.lat as img_lat, 
+                        images.lng as img_lng, 
+                        images.title as img_title,
+                        images.image as img_url
+                  FROM places
+                  LEFT JOIN images ON places.id = images.place_id
+                  WHERE places.id = ANY($1) 
+                    OR images.image = ANY($2)`;
+
+    return db.query(query, [places, images]);
 };
 
-exports.readPlaces = () => {
-    const query = `SELECT * 
-                  FROM places;`;
-    return db.query(query);
+exports.createPlace = ({ name, lat, lng, tags, is_natural, id, radius }) => {
+    const query = `INSERT INTO places (name, lat, lng, tags, is_natural, id, radius) 
+                   VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;`;
+    return db.query(query, [name, lat, lng, tags, is_natural, id, radius]);
+};
+
+exports.readPlaces = ({ places }) => {
+    let query = `SELECT * 
+                  FROM places`;
+    query =
+        places && places.length > 0 && places[0]
+            ? query + ` WHERE id = ANY($1);`
+            : query + ` WHERE $1 = $1`;
+    return db.query(query, [places || []]);
 };
 
 exports.readPlace = ({ id }) => {
@@ -175,18 +193,32 @@ exports.deletePlace = ({ id }) => {
     return db.query(query, [id]);
 };
 
-// IMAGES
-exports.createImage = ({ image, place_id }) => {
-    const query = `INSERT INTO images (image, place_id) 
-                   VALUES ($1, $2) RETURNING *;`;
-    return db.query(query, [image, place_id]);
+/////////////////// IMAGES ///////////////////////
+exports.createImage = ({ image, place_id, lat, lng, title }) => {
+    const query = `INSERT INTO images (image, place_id, lat, lng, title) 
+                   VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
+    return db.query(query, [image, place_id, lat, lng, title]);
+};
+
+exports.readAllImages = () => {
+    let query = `SELECT * 
+                  FROM images;`;
+
+    return db.query(query);
 };
 
 exports.readPlaceImages = ({ place_id }) => {
-    const query = `SELECT * 
-                  FROM images 
+    let query = `SELECT * 
+                  FROM images
                   WHERE place_id = $1;`;
     return db.query(query, [place_id]);
+};
+
+exports.readPlacesImages = ({ places }) => {
+    let query = `SELECT * 
+                  FROM images
+                  WHERE place_id = ANY($1)`;
+    return db.query(query, [places]);
 };
 
 exports.readRouteImages = ({ id }) => {
@@ -203,7 +235,7 @@ exports.deleteImage = ({ id, place_id }) => {
     return db.query(query, [id || "", place_id || ""]);
 };
 
-// REVIEWS
+/////////////////// REVIEWS ///////////////////////
 exports.createReview = ({ place_id, route_id, text, rating }) => {
     const query = `INSERT INTO reviews (place_id, route_id, text, rating) 
                    VALUES ($1, $2, $3, $4) RETURNING *;`;
