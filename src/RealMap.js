@@ -7,17 +7,94 @@ import {
     InfoWindow,
 } from "@react-google-maps/api";
 import axios from "./axios";
+import usePlacesAutocomplete, {
+    getGeocode,
+    getLatLng,
+} from "use-places-autocomplete";
+import {
+    Combobox,
+    ComboboxInput,
+    ComboboxPopover,
+    ComboboxList,
+    ComboboxOption,
+} from "@reach/combobox";
+import { formatRelative } from "date-fns";
+
+import "@reach/combobox/styles.css";
+import mapStyles from "./mapStyles";
 
 const containerStyle = {
     width: "100%",
     height: "100%",
 };
+
+const options = {
+    styles: mapStyles,
+    disableDefaultUI: true,
+    zoomControl: true,
+};
+
 const center = {
     lat: 52.4071663,
     lng: 13.019338,
 };
 const libraries = ["directions", "places"];
 const GMAPS_INITIAL_SEARCH_RADIUS_METERS = 5000;
+
+function Search({ panTo }) {
+    const {
+        ready,
+        value,
+        suggestions: { status, data },
+        setValue,
+        clearSuggestions,
+    } = usePlacesAutocomplete({
+        requestOptions: {
+            location: { lat: () => 43.6532, lng: () => -79.3832 },
+            radius: 100 * 1000,
+        },
+    });
+
+    // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletionRequest
+
+    const handleInput = (e) => {
+        setValue(e.target.value);
+    };
+
+    const handleSelect = async (address) => {
+        setValue(address, false);
+        clearSuggestions();
+
+        try {
+            const results = await getGeocode({ address });
+            const { lat, lng } = await getLatLng(results[0]);
+            panTo({ lat, lng });
+        } catch (error) {
+            console.log("😱 Error: ", error);
+        }
+    };
+
+    return (
+        <div className="search">
+            <Combobox onSelect={handleSelect}>
+                <ComboboxInput
+                    value={value}
+                    onChange={handleInput}
+                    disabled={!ready}
+                    placeholder="Search your location"
+                />
+                <ComboboxPopover>
+                    <ComboboxList>
+                        {status === "OK" &&
+                            data.map(({ id, description }) => (
+                                <ComboboxOption key={id} value={description} />
+                            ))}
+                    </ComboboxList>
+                </ComboboxPopover>
+            </Combobox>
+        </div>
+    );
+}
 
 const fetchGoogleMaps = (startingPoint) => {
     return new Promise((resolve, reject) => {
@@ -68,6 +145,17 @@ const Map = ({ setImages }) => {
         visible: true,
         zIndex: 1,
     };
+
+    const mapRef = React.useRef();
+    const onMapLoad = React.useCallback((map) => {
+        mapRef.current = map;
+    }, []);
+
+    const panTo = React.useCallback(({ lat, lng }) => {
+        mapRef.current.panTo({ lat, lng });
+        mapRef.current.setZoom(14);
+    }, []);
+
     const onMapClick = async ({ latLng }) => {
         const initialLocation = {
             lat: latLng.lat(),
@@ -95,13 +183,17 @@ const Map = ({ setImages }) => {
             points: points,
             images: photosArr,
         });
-
         console.log("allPoints", allPoints);
-        setAllPoints(allPoints);
+        const pointsToDisplay = [];
+        for (let i in allPoints) {
+            pointsToDisplay.push(allPoints[i]);
+        }
+        console.log("pointsToDisplay", pointsToDisplay);
+        setAllPoints(pointsToDisplay);
         // set points from backend to state
         setPlaces();
         // set images to state
-        setImages(allPoints);
+        // setImages(allPoints);
     };
     const onMarkerClick = (ind) => {
         setClickedPlaceIndex(ind);
@@ -170,22 +262,23 @@ const Map = ({ setImages }) => {
 
     return (
         <GoogleMap
+            className="map"
             mapContainerStyle={containerStyle}
             mapContainerClassName="mapContainer"
             center={center}
             zoom={10}
             onClick={(e) => onMapClick(e)}
+            onLoad={onMapLoad}
+            options={options}
         >
             <div
                 id="foo"
                 style={{ width: "0px", height: "0px", display: "none" }}
             ></div>
+            <Search panTo={panTo} />
             {allPoints.length && renderAllPoints()}
         </GoogleMap>
     );
 };
-// export default Map;
 
 export default React.memo(Map);
-
-// point_of_interest

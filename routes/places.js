@@ -42,18 +42,37 @@ router.post("/", async (req, res) => {
             place_id,
         } = point;
 
-        try {
-            await db.createPlace({
-                id: place_id,
-                name,
-                lat,
-                lng,
-                tags: types,
-                is_natural: true,
-                radius: 0,
-            });
-        } catch (err) {
-            // console.log("createPlace", err.message);
+        console.log("points map", types);
+        if (
+            types.length === 0 ||
+            types.find((type) =>
+                [
+                    "tourist_attraction",
+                    "amusement_park",
+                    "aquarium",
+                    "art_gallery",
+                    "church",
+                    "zoo",
+                    "synagogue",
+                    "park",
+                    "museum",
+                    "mosque",
+                ].includes(type)
+            )
+        ) {
+            try {
+                await db.createPlace({
+                    id: place_id,
+                    name,
+                    lat,
+                    lng,
+                    tags: types,
+                    is_natural: true,
+                    radius: 0,
+                });
+            } catch (err) {
+                // console.log("createPlace", err.message);
+            }
         }
     });
 
@@ -207,14 +226,14 @@ router.post("/", async (req, res) => {
     let allPointsData = await db.getRequestedPlacesAndImages(allPoints);
     allPointsData = allPointsData.rows;
     const allPointsToSend = {};
-    for (let i = 0; i < allPoints.length; i++) {
-        if (!allPointsToSend[allPoints[i].id]) {
-            allPointsToSend[allPoints[i].id] = {
-                ...allPoints[i],
-                images: [allPoints[i]],
+    for (let i = 0; i < allPointsData.length; i++) {
+        if (!allPointsToSend[allPointsData[i].id]) {
+            allPointsToSend[allPointsData[i].id] = {
+                ...allPointsData[i],
+                images: [allPointsData[i]],
             };
         } else {
-            allPointsToSend[allPoints[i].id].images.push(allPoints[i]);
+            allPointsToSend[allPointsData[i].id].images.push(allPointsData[i]);
         }
     }
 
