@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
 const compression = require("compression");
@@ -15,8 +17,6 @@ const authRouter = require("./routes/auth");
 const placesRouter = require("./routes/places");
 const routesRouter = require("./routes/routes");
 
-require("dotenv").config();
-
 const cookieSessionMiddleware = cookieSession({
     keys: ["key1", "key2"],
     secret: process.env.COOKIE_SECRET,
@@ -24,22 +24,20 @@ const cookieSessionMiddleware = cookieSession({
 });
 
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: "50mb", extended: true }));
 app.use(helmet());
 app.use(cookieSessionMiddleware);
 
 app.use(express.static(path.join(__dirname, "build")));
 
 app.use(
-    express.urlencoded({
-        extended: false,
-    })
+    express.urlencoded({ limit: "50mb", extended: true, parameterLimit: 50000 })
 );
-app.use(csurf());
+// app.use(csurf());
 
 app.use(function (req, res, next) {
     res.set("x-frame-options", "deny");
-    res.cookie("mytoken", req.csrfToken());
+    // res.cookie("mytoken", req.csrfToken());
     next();
 });
 
@@ -70,12 +68,12 @@ app.delete("/api/user/:user_id", deleteFolderS3, async (req, res) => {
                     req.session = null;
                     return res.sendStatus(204);
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.log(err);
                     return res.sendStatus("500");
                 });
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             return res.sendStatus("500");
         });

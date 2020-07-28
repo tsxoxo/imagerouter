@@ -7,9 +7,7 @@ import GridListTileBar from "@material-ui/core/GridListTileBar";
 import IconButton from "@material-ui/core/IconButton";
 import StarBorderIcon from "@material-ui/icons/StarBorder";
 
-import mock_api_places_response from "./mockApiPlaceRes";
-
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
     root: {
         display: "flex",
         flexWrap: "wrap",
@@ -31,35 +29,41 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const Gallery = () => {
+const Gallery = ({ images }) => {
     const classes = useStyles();
 
     return (
         <div className={classes.root}>
             <GridList className={classes.gridList} cols={1.5}>
-                {mock_api_places_response.map((place, ind) => {
-                    return place.img_url ? (
-                        <GridListTile key={ind}>
-                            <img src={place.img_url} alt={place.img_title} />
-                            <GridListTileBar
-                                title={place.img_title}
-                                classes={{
-                                    root: classes.titleBar,
-                                    title: classes.title,
-                                }}
-                                actionIcon={
-                                    <IconButton
-                                        aria-label={`star ${place.img_title}`}
-                                    >
-                                        <StarBorderIcon
-                                            className={classes.title}
-                                        />
-                                    </IconButton>
-                                }
-                            />
-                        </GridListTile>
-                    ) : null;
-                })}
+                {images &&
+                    images.map((image) => {
+                        return image.img_url ? (
+                            <GridListTile
+                                key={image.id + image.img_lat + image.img_lng}
+                            >
+                                <img
+                                    src={image.img_url}
+                                    alt={image.img_title}
+                                />
+                                <GridListTileBar
+                                    title={image.img_title}
+                                    classes={{
+                                        root: classes.titleBar,
+                                        title: classes.title,
+                                    }}
+                                    actionIcon={
+                                        <IconButton
+                                            aria-label={`star ${image.img_title}`}
+                                        >
+                                            <StarBorderIcon
+                                                className={classes.title}
+                                            />
+                                        </IconButton>
+                                    }
+                                />
+                            </GridListTile>
+                        ) : null;
+                    })}
             </GridList>
         </div>
     );

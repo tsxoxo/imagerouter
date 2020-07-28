@@ -16,24 +16,23 @@ router.post("/", async (req, res) => {
     // get data from frontend
     // {points: [GOOGLE POINTS], images: [FLICKR IMAGES]}
     const allPoints = {
-        places: req.body.points.map(place => place.place_id),
-        images: req.body.images.map(image => image.url_m),
+        places: req.body.points.map((place) => place.place_id),
+        images: req.body.images.map((image) => image.url_m),
     };
-
-    console.log("req.body.points:", req.body.points);
-    console.log("###allpoints.places", allPoints.places);
 
     const points = req.body.points;
     let images = req.body.images;
     let alreadySavedImages = await db.readAllImages();
     alreadySavedImages = alreadySavedImages.rows.map(
-        savedImage => savedImage.image
+        (savedImage) => savedImage.image
     );
     // remove images already inserted into DB
-    images = images.filter(image => !alreadySavedImages.includes(image.url_m));
+    images = images.filter(
+        (image) => !alreadySavedImages.includes(image.url_m)
+    );
 
     // save google places to DB
-    points.map(async point => {
+    points.map(async (point) => {
         const {
             name,
             geometry: {
@@ -54,7 +53,7 @@ router.post("/", async (req, res) => {
                 radius: 0,
             });
         } catch (err) {
-            console.log(err);
+            console.log("createPlace", err);
         }
     });
 
@@ -70,8 +69,8 @@ router.post("/", async (req, res) => {
 
     const newPoints = new Set();
     // attribute images to existing places
-    places.forEach(place => {
-        images.forEach(async image => {
+    places.forEach((place) => {
+        images.forEach(async (image) => {
             if (
                 distance(
                     place.lat,
@@ -89,7 +88,7 @@ router.post("/", async (req, res) => {
                         title: image.title,
                     });
                 } catch (err) {
-                    console.log(err);
+                    console.log("createImage", err);
                 }
             } else {
                 // if there are no previously saved places to
@@ -106,7 +105,7 @@ router.post("/", async (req, res) => {
         point = JSON.parse(point);
         newClusteredPoints.push(new Set([point.id]));
 
-        newPoints.forEach(otherPoint => {
+        newPoints.forEach((otherPoint) => {
             otherPoint = JSON.parse(otherPoint);
 
             if (
@@ -125,8 +124,8 @@ router.post("/", async (req, res) => {
 
     // find which clusters are subsets that need removal
     const clustersToRemove = new Set();
-    newClusteredPoints.forEach(cluster => {
-        newClusteredPoints.forEach(otherCluster => {
+    newClusteredPoints.forEach((cluster) => {
+        newClusteredPoints.forEach((otherCluster) => {
             if (
                 isSuperset(cluster, otherCluster) &&
                 !eqSet(cluster, otherCluster)
@@ -137,7 +136,7 @@ router.post("/", async (req, res) => {
     });
 
     // save clusters as places and add images to those places
-    await [...newClusteredPoints].map(async cluster => {
+    await [...newClusteredPoints].map(async (cluster) => {
         let newPlace;
 
         // if cluster is not in clustersToRemove saved to DB
@@ -145,8 +144,8 @@ router.post("/", async (req, res) => {
             // get radius by getting the distance between the 2 furthest points within the cluster
             let maxDistance = 0;
             if (cluster.size > 1) {
-                cluster.forEach(pointId => {
-                    cluster.forEach(otherPointId => {
+                cluster.forEach((pointId) => {
+                    cluster.forEach((otherPointId) => {
                         const distanceAtoB = distance(
                             imagesObj[pointId].latitude,
                             imagesObj[pointId].longitude,
@@ -179,12 +178,12 @@ router.post("/", async (req, res) => {
             }
 
             // insert images to DB connecting to saved Point
-            const filteredImages = images.filter(image => {
+            const filteredImages = images.filter((image) => {
                 return [...cluster].includes(image.id);
             });
 
             await Promise.all(
-                filteredImages.map(async image => {
+                filteredImages.map(async (image) => {
                     try {
                         await db.createImage({
                             place_id: newPlace.id,

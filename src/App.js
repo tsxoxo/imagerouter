@@ -1,9 +1,9 @@
 import React from "react";
 import CssBaseline from "@material-ui/core/CssBaseline";
-
+import { useState } from "react";
 import "./App.css";
 
-import Map from "./Map";
+import RealMap from "./RealMap";
 import Gallery from "./Gallery";
 import {
     AppBar,
@@ -14,6 +14,7 @@ import {
 } from "@material-ui/core";
 
 function App() {
+    const [photos, setPhotos] = useState([]);
     return (
         <>
             <CssBaseline />
@@ -36,10 +37,10 @@ function App() {
             </AppBar>
             <Grid container style={{ height: "100%" }}>
                 <Grid item sm={4}>
-                    <Gallery />
+                    <Gallery images={photos} />
                 </Grid>
                 <Grid item sm={8}>
-                    <Map />
+                    <RealMap setImages={(images) => setPhotos(images)} />
                 </Grid>
             </Grid>
         </>
