@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
     GoogleMap,
     useLoadScript,
@@ -7,20 +7,8 @@ import {
     InfoWindow,
 } from "@react-google-maps/api";
 import axios from "./axios";
-import usePlacesAutocomplete, {
-    getGeocode,
-    getLatLng,
-} from "use-places-autocomplete";
-import {
-    Combobox,
-    ComboboxInput,
-    ComboboxPopover,
-    ComboboxList,
-    ComboboxOption,
-} from "@reach/combobox";
-import { formatRelative } from "date-fns";
+import Search from "./Search";
 
-import "@reach/combobox/styles.css";
 import mapStyles from "./mapStyles";
 
 const containerStyle = {
@@ -38,64 +26,8 @@ const center = {
     lat: 52.4071663,
     lng: 13.019338,
 };
-const libraries = ["directions", "places"];
+const libraries = ["places"];
 const GMAPS_INITIAL_SEARCH_RADIUS_METERS = 5000;
-
-function Search({ panTo, getMapPoints }) {
-    const {
-        ready,
-        value,
-        suggestions: { status, data },
-        setValue,
-        clearSuggestions,
-    } = usePlacesAutocomplete({
-        requestOptions: {
-            location: { lat: () => 43.6532, lng: () => -79.3832 },
-            radius: 100 * 1000,
-        },
-    });
-
-    // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletionRequest
-
-    const handleInput = (e) => {
-        setValue(e.target.value);
-    };
-
-    const handleSelect = async (address) => {
-        setValue(address, false);
-        clearSuggestions();
-
-        try {
-            const results = await getGeocode({ address });
-            const { lat, lng } = await getLatLng(results[0]);
-            panTo({ lat, lng });
-            getMapPoints({ lat, lng });
-        } catch (error) {
-            console.log("😱 Error: ", error);
-        }
-    };
-
-    return (
-        <div className="search">
-            <Combobox onSelect={handleSelect}>
-                <ComboboxInput
-                    value={value}
-                    onChange={handleInput}
-                    disabled={!ready}
-                    placeholder="Search your location"
-                />
-                <ComboboxPopover>
-                    <ComboboxList>
-                        {status === "OK" &&
-                            data.map(({ id, description }) => (
-                                <ComboboxOption key={id} value={description} />
-                            ))}
-                    </ComboboxList>
-                </ComboboxPopover>
-            </Combobox>
-        </div>
-    );
-}
 
 const fetchGoogleMaps = (startingPoint) => {
     return new Promise((resolve, reject) => {
@@ -151,6 +83,7 @@ const Map = ({ setImages, hoveredPointId }) => {
     }, []);
 
     const panTo = React.useCallback(({ lat, lng }) => {
+        console.log("panning to:", lat, lng);
         mapRef.current.panTo({ lat, lng });
         mapRef.current.setZoom(14);
     }, []);
@@ -240,23 +173,13 @@ const Map = ({ setImages, hoveredPointId }) => {
     };
 
     const renderAllPoints = () => {
-        const bounds = new window.google.maps.LatLngBounds();
         const elements = Object.keys(allPoints).map((pointId, ind) => {
             const point = allPoints[pointId];
             const pointCenter = {
                 lat: Number(point.lat),
                 lng: Number(point.lng),
             };
-            // What is this doing??
-            // if (
-            //     pointCenter.lat > 45 &&
-            //     pointCenter.lat < 55 &&
-            //     pointCenter.lng > 8 &&
-            //     pointCenter.lng < 15
-            // ) {
-            //     bounds.extend(pointCenter);
-            // }
-            // if (ind === 0) console.log(pointCenter);
+
             if (point.is_natural === true) {
                 return (
                     <Marker
@@ -266,12 +189,8 @@ const Map = ({ setImages, hoveredPointId }) => {
                     />
                 );
             } else {
-                // console.log("### ", ind);
                 const radius = point.radius * 1000 + 200;
-                // const radius = 1000;
                 const options = { ...photoPointOptions, radius };
-                // ind === 19 &&
-                //     console.log(`${ind}: ${JSON.stringify(pointCenter)}`);
 
                 return (
                     <Circle
@@ -283,7 +202,7 @@ const Map = ({ setImages, hoveredPointId }) => {
                 );
             }
         });
-        mapRef.current.fitBounds(bounds);
+        mapRef.current.setZoom(12.5);
 
         return elements;
     };
