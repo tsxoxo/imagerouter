@@ -53,7 +53,7 @@ router.post("/", async (req, res) => {
                 radius: 0,
             });
         } catch (err) {
-            console.log("createPlace", err);
+            // console.log("createPlace", err.message);
         }
     });
 
@@ -88,7 +88,7 @@ router.post("/", async (req, res) => {
                         title: image.title,
                     });
                 } catch (err) {
-                    console.log("createImage", err);
+                    // console.log("createImage", err.message);
                 }
             } else {
                 // if there are no previously saved places to
@@ -174,7 +174,7 @@ router.post("/", async (req, res) => {
                 });
                 newPlace = rows[0];
             } catch (err) {
-                console.log(err);
+                // console.log(err.message);
             }
 
             // insert images to DB connecting to saved Point
@@ -193,7 +193,7 @@ router.post("/", async (req, res) => {
                             title: image.title,
                         });
                     } catch (err) {
-                        console.log(err);
+                        // console.log(err.message);
                     }
                 })
             );
@@ -203,10 +203,22 @@ router.post("/", async (req, res) => {
     // due to the async calls for adding the images to places
     // not really stopping on the await, sleep just to make sure all
     // of them are added before getting all places
-    sleep(5000);
-    const allPointsData = await db.getRequestedPlacesAndImages(allPoints);
+    sleep(10000);
+    let allPointsData = await db.getRequestedPlacesAndImages(allPoints);
+    allPointsData = allPointsData.rows;
+    const allPointsToSend = {};
+    for (let i = 0; i < allPoints.length; i++) {
+        if (!allPointsToSend[allPoints[i].id]) {
+            allPointsToSend[allPoints[i].id] = {
+                ...allPoints[i],
+                images: [allPoints[i]],
+            };
+        } else {
+            allPointsToSend[allPoints[i].id].images.push(allPoints[i]);
+        }
+    }
 
-    return res.json(allPointsData.rows);
+    return res.json(allPointsToSend);
 });
 
 router.get("/:id", async (req, res) => {
@@ -216,7 +228,7 @@ router.get("/:id", async (req, res) => {
         });
         return res.json(rows[0]);
     } catch (err) {
-        console.log(err);
+        // console.log(err.message);
     }
 });
 
@@ -227,7 +239,7 @@ router.get("/:id/images", async (req, res) => {
         });
         return res.json(rows);
     } catch (err) {
-        console.log(err);
+        // console.log(err.message);
     }
 });
 
