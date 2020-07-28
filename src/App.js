@@ -20,9 +20,7 @@ function App() {
             <CssBaseline />
             <AppBar position="static">
                 <Toolbar>
-                    <Typography style={{ flexGrow: 1 }} variant="h4">
-                        ImageRouter
-                    </Typography>
+                    <img src="/logo.png" alt="logo" width="120" height="70" />
                     <nav
                         style={{
                             // width: 500,
