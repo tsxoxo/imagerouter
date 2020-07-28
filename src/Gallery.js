@@ -46,7 +46,11 @@ const MiniGallery = (props) => {
                 images.map((image, ind) => {
                     return image.img_url ? (
                         <GridListTile key={ind}>
-                            <img src={image.img_url} alt={image.img_title} />
+                            <img
+                                className={props.classAdded}
+                                src={image.img_url}
+                                alt={image.img_title}
+                            />
                             <GridListTileBar
                                 title={image.img_title}
                                 classes={{
@@ -100,6 +104,19 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
                         />
                     );
                 })}
+            {allPoints.length === 0 &&
+                [1, 2, 3, 4, 5].map((index) => (
+                    <MiniGallery
+                        key={index}
+                        classAdded="default-image"
+                        images={[
+                            {
+                                img_url: "/image-placeholder.png",
+                                img_title: "Images not available.",
+                            },
+                        ]}
+                    />
+                ))}
         </div>
     );
 };
