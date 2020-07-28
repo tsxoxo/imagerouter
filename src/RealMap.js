@@ -247,14 +247,15 @@ const Map = ({ setImages, hoveredPointId }) => {
                 lat: Number(point.lat),
                 lng: Number(point.lng),
             };
-            if (
-                pointCenter.lat > 45 &&
-                pointCenter.lat < 55 &&
-                pointCenter.lng > 8 &&
-                pointCenter.lng < 15
-            ) {
-                bounds.extend(pointCenter);
-            }
+            // What is this doing??
+            // if (
+            //     pointCenter.lat > 45 &&
+            //     pointCenter.lat < 55 &&
+            //     pointCenter.lng > 8 &&
+            //     pointCenter.lng < 15
+            // ) {
+            //     bounds.extend(pointCenter);
+            // }
             // if (ind === 0) console.log(pointCenter);
             if (point.is_natural === true) {
                 return (
@@ -329,7 +330,9 @@ const Map = ({ setImages, hoveredPointId }) => {
                                 ),
                             }}
                         />
-                        <p>Searching for images and places nearby...</p>
+                        <div className="loading">
+                            Searching for images and places nearby
+                        </div>
                     </div>
                 </InfoWindow>
             ) : null}
