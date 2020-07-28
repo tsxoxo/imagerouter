@@ -7,23 +7,20 @@ import GridListTileBar from "@material-ui/core/GridListTileBar";
 import IconButton from "@material-ui/core/IconButton";
 import StarBorderIcon from "@material-ui/icons/StarBorder";
 
-import mock_api_places_response from "./mockApiPlaceRes";
-
 const useStyles = makeStyles(theme => ({
     root: {
         display: "flex",
         flexWrap: "wrap",
         justifyContent: "space-around",
-        overflowY: "scroll",
         overflowX: "hidden",
-        backgroundColor: theme.palette.background.paper,
-        height: "94vh",
+        overflowY: "scroll",
+        backgroundColor: "#232323",
+        height: "90vh",
     },
     gridList: {
-        // flexWrap: "nowrap",
+        flexWrap: "nowrap",
         // Promote the list into his own layer on Chrome. This cost memory but helps keeping high FPS.
         transform: "translateZ(0)",
-        height: "100%",
     },
     title: {
         color: theme.palette.primary.light,
@@ -32,53 +29,34 @@ const useStyles = makeStyles(theme => ({
         background:
             "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)",
     },
-    highlightOnHover: {
-        boxSizing: "border-box",
-        border: "15px lime solid",
-        // boxShadow: "0px 0px 0px 10px black inset",
-    },
 }));
 
-const Gallery = props => {
-    const places = props.places;
+const MiniGallery = props => {
+    const { images, onHover, pointId } = props;
     const classes = useStyles();
 
-    useEffect(() => {
-        console.log("props.hovered", props.hoveredMapPointIndex);
-    }, [props.hoveredMapPointIndex]);
-
     return (
-        <div className={classes.root}>
-            <GridList cellHeight={320} className={classes.gridList} cols={1}>
-                {places.map((place, ind) => {
-                    return place.img_url ? (
-                        <GridListTile
-                            key={ind}
-                            onMouseEnter={() =>
-                                props.handleGalleryItemMouseEnter(ind)
-                            }
-                            onMouseLeave={() =>
-                                props.handleGalleryItemMouseLeave(ind)
-                            }
-                        >
-                            <img
-                                src={place.img_url}
-                                alt={place.img_title}
-                                className={
-                                    ind === props.hoveredMapPointIndex
-                                        ? classes.highlightOnHover
-                                        : {}
-                                }
-                            />
+        <GridList
+            cellHeight={180}
+            className={classes.gridList}
+            cols={1.5}
+            id={`${pointId}`}
+            // onMouseEnter={e => onHover(e.currentTarget.id)}
+        >
+            {images &&
+                images.map((image, ind) => {
+                    return image.img_url ? (
+                        <GridListTile key={ind}>
+                            <img src={image.img_url} alt={image.img_title} />
                             <GridListTileBar
-                                title={place.img_title}
+                                title={image.img_title}
                                 classes={{
                                     root: classes.titleBar,
                                     title: classes.title,
                                 }}
                                 actionIcon={
                                     <IconButton
-                                        aria-label={`star ${place.img_title}`}
+                                        aria-label={`star ${image.img_title}`}
                                     >
                                         <StarBorderIcon
                                             className={classes.title}
@@ -89,10 +67,42 @@ const Gallery = props => {
                         </GridListTile>
                     ) : null;
                 })}
-            </GridList>
+        </GridList>
+    );
+};
+
+const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
+    const classes = useStyles();
+    const inputEl = React.useRef(null);
+    // GALLERY
+    const onHover = e => {
+        // console.log("onHover e", e.currentTarget.id);
+
+        inputEl.current && inputEl.current.classList.remove(".active");
+        const place_id = e.target.key;
+        const hoveredPoint = document.getElementById(place_id);
+        inputEl.current && hoveredPoint.classList.add("active");
+        inputEl.current = hoveredPoint;
+    };
+
+    return (
+        <div className={classes.root}>
+            {Object.keys(allPoints).length > 0 &&
+                Object.keys(allPoints).map((pointId, ind) => {
+                    const point = allPoints[pointId];
+
+                    return (
+                        <MiniGallery
+                            images={point.images}
+                            key={point.id}
+                            pointId={point.id}
+                            onHover={onHoverMiniGallery}
+                            onClick={() => onClickMiniGallery(point.id)}
+                        />
+                    );
+                })}
         </div>
     );
 };
 
-export default React.memo(Gallery);
-// export default Gallery;
+export default Gallery;
