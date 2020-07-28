@@ -41,7 +41,7 @@ const center = {
 const libraries = ["directions", "places"];
 const GMAPS_INITIAL_SEARCH_RADIUS_METERS = 5000;
 
-function Search({ panTo }) {
+function Search({ panTo, getMapPoints }) {
     const {
         ready,
         value,
@@ -69,6 +69,7 @@ function Search({ panTo }) {
             const results = await getGeocode({ address });
             const { lat, lng } = await getLatLng(results[0]);
             panTo({ lat, lng });
+            getMapPoints({ lat, lng });
         } catch (error) {
             console.log("😱 Error: ", error);
         }
@@ -121,14 +122,12 @@ const fetchGoogleMaps = (startingPoint) => {
 };
 
 //////////////////////////////
-const Map = ({ setImages }) => {
+const Map = ({ setImages, hoveredPointId }) => {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: process.env.REACT_APP_MAPS_API_KEY,
         libraries,
     });
-    const isFirstRender = useRef(true);
-    const [photos, setPhotos] = useState([]);
-    const [places, setPlaces] = useState([]);
+    const [selected, setSelected] = React.useState(null);
     const [allPoints, setAllPoints] = useState([]);
     const [clickedPlaceIndex, setClickedPlaceIndex] = useState(-1);
     const [startingPoint, setStartingPoint] = useState({});
@@ -156,83 +155,113 @@ const Map = ({ setImages }) => {
         mapRef.current.setZoom(14);
     }, []);
 
-    const onMapClick = async ({ latLng }) => {
-        const initialLocation = {
-            lat: latLng.lat(),
-            lng: latLng.lng(),
-        };
-        // set marker on starting point
-        setStartingPoint(initialLocation);
-        // send req to flickr with lat/lng
-        const {
-            data: {
-                photos: { photo: photosArr },
-            },
-        } = await axios(
-            `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=780c2a6ebd0a390c32d27af97a48da7c&content_type=1&media=photos&has_geo=1&geo_context=2&lat=${initialLocation.lat}+&lon=${initialLocation.lng}&radius=5&extras=geo%2Curl_o%2Curl_m&format=json&nojsoncallback=1`
-        );
+    const getMapPoints = React.useCallback(
+        async ({ latLng, lat, lng }) => {
+            let initialLocation;
+            if (latLng) {
+                initialLocation = {
+                    lat: latLng.lat(),
+                    lng: latLng.lng(),
+                };
+            } else {
+                initialLocation = {
+                    lat,
+                    lng,
+                };
+            }
+            setSelected(initialLocation);
+            panTo(initialLocation);
 
-        // send req to gmaps api with lat/lng
-        const points = await fetchGoogleMaps(initialLocation);
-        // send both arrays to backend api POST /place
-        console.log("both apis", {
-            points: points,
-            images: photosArr,
-        });
-        const { data: allPoints } = await axios.post("/api/place", {
-            points: points,
-            images: photosArr,
-        });
-        console.log("allPoints", allPoints);
-        const pointsToDisplay = [];
-        for (let i in allPoints) {
-            pointsToDisplay.push(allPoints[i]);
-        }
-        console.log("pointsToDisplay", pointsToDisplay);
-        setAllPoints(pointsToDisplay);
-        // set points from backend to state
-        setPlaces();
-        // set images to state
-        // setImages(allPoints);
-    };
+            // set marker on starting point
+            setStartingPoint(initialLocation);
+            // send req to flickr with lat/lng
+            const {
+                data: {
+                    photos: { photo: photosArr },
+                },
+            } = await axios(
+                `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=780c2a6ebd0a390c32d27af97a48da7c&content_type=1&media=photos&has_geo=1&geo_context=2&lat=${initialLocation.lat}+&lon=${initialLocation.lng}&radius=5&extras=geo%2Curl_o%2Curl_m&format=json&nojsoncallback=1`
+            );
+
+            // send req to gmaps api with lat/lng
+            const points = await fetchGoogleMaps(initialLocation);
+            // send both arrays to backend api POST /place
+            console.log("both apis", {
+                points: points,
+                images: photosArr,
+            });
+            const { data: allPoints } = await axios.post("/api/place", {
+                points: points,
+                images: photosArr.slice(0, 50),
+            });
+            console.log("allPoints", allPoints);
+            // format the points into an array of single points
+            const pointsToDisplay = [];
+            for (let i in allPoints) {
+                pointsToDisplay.push(allPoints[i]);
+            }
+            console.log("pointsToDisplay", pointsToDisplay);
+            setAllPoints(pointsToDisplay);
+            // set images to state
+            setImages(allPoints);
+            setSelected(null);
+        },
+        [panTo, setImages]
+    );
     const onMarkerClick = (ind) => {
         setClickedPlaceIndex(ind);
     };
-    const renderInfoWindow = () => {
-        let infoWIndow = null;
+    const renderInfoWindow = (point) => {
+        let infoWindow = null;
         const divStyle = {
             background: `white`,
             border: `1px solid #ccc`,
             padding: 15,
         };
-        const place = places[clickedPlaceIndex];
-        if (clickedPlaceIndex > -1) {
-            infoWIndow = (
-                <InfoWindow
-                    position={place.geometry.location}
-                    onCloseClick={() => setClickedPlaceIndex(-1)}
-                >
-                    <div style={divStyle}>
-                        <h1>{place.name}</h1>
-                    </div>
-                </InfoWindow>
-            );
-        }
-        return infoWIndow;
+        const pointCenter = {
+            lat: Number(point.lat),
+            lng: Number(point.lng),
+        };
+        console.log(point);
+        // const place = places[clickedPlaceIndex];
+        // if (clickedPlaceIndex > -1) {
+        infoWindow = (
+            <InfoWindow
+                position={pointCenter}
+                // onCloseClick={() => setClickedPlaceIndex(-1)}
+            >
+                <div style={divStyle}>
+                    <h1>{point.id}</h1>
+                </div>
+            </InfoWindow>
+        );
+        // }
+        return infoWindow;
     };
 
     const renderAllPoints = () => {
-        return allPoints.map((point, ind) => {
+        const bounds = new window.google.maps.LatLngBounds();
+        const elements = Object.keys(allPoints).map((pointId, ind) => {
+            const point = allPoints[pointId];
             const pointCenter = {
                 lat: Number(point.lat),
                 lng: Number(point.lng),
             };
+            if (
+                pointCenter.lat > 45 &&
+                pointCenter.lat < 55 &&
+                pointCenter.lng > 8 &&
+                pointCenter.lng < 15
+            ) {
+                bounds.extend(pointCenter);
+            }
+            // if (ind === 0) console.log(pointCenter);
             if (point.is_natural === true) {
                 return (
                     <Marker
-                        key={ind}
+                        key={point.id}
                         position={pointCenter}
-                        // onClick={() => onMarkerClick(ind)}
+                        onClick={() => panTo(pointCenter)}
                     />
                 );
             } else {
@@ -245,16 +274,17 @@ const Map = ({ setImages }) => {
 
                 return (
                     <Circle
-                        key={
-                            point.img_lat + point.img_lng + point.img_url || ind
-                        }
+                        key={point.id}
                         center={pointCenter}
                         options={options}
-                        onClick={(e) => console.log(ind)}
+                        onClick={() => panTo(pointCenter)}
                     />
                 );
             }
         });
+        mapRef.current.fitBounds(bounds);
+
+        return elements;
     };
 
     if (loadError) return "Error";
@@ -267,7 +297,7 @@ const Map = ({ setImages }) => {
             mapContainerClassName="mapContainer"
             center={center}
             zoom={10}
-            onClick={(e) => onMapClick(e)}
+            onClick={(e) => getMapPoints(e)}
             onLoad={onMapLoad}
             options={options}
         >
@@ -275,8 +305,27 @@ const Map = ({ setImages }) => {
                 id="foo"
                 style={{ width: "0px", height: "0px", display: "none" }}
             ></div>
-            <Search panTo={panTo} />
-            {allPoints.length && renderAllPoints()}
+            <Search panTo={panTo} getMapPoints={getMapPoints} />
+            {selected ? (
+                <InfoWindow
+                    position={{ lat: selected.lat, lng: selected.lng }}
+                    onCloseClick={() => {
+                        setSelected(null);
+                    }}
+                >
+                    <div>
+                        <Marker
+                            position={{ lat: selected.lat, lng: selected.lng }}
+                            onClick={() =>
+                                panTo({ lat: selected.lat, lng: selected.lng })
+                            }
+                        />
+                        <p>Searching for images and places nearby...</p>
+                    </div>
+                </InfoWindow>
+            ) : null}
+            {hoveredPointId && renderInfoWindow(allPoints[hoveredPointId])}
+            {Object.keys(allPoints).length > 0 && renderAllPoints()}
         </GoogleMap>
     );
 };

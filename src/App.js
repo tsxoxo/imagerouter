@@ -15,8 +15,20 @@ import {
 
 function App() {
     const [photos, setPhotos] = useState([]);
+    const [
+        lastClickedMiniGalleryPointId,
+        setLastClickedMiniGalleryPointId,
+    ] = useState(null);
+    const [hoveredPointId, setHoveredPointId] = useState(null);
     return (
-        <>
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                margin: "0",
+                padding: "0",
+            }}
+        >
             <CssBaseline />
             <AppBar position="static">
                 <Toolbar>
@@ -25,7 +37,7 @@ function App() {
                         style={{
                             // width: 500,
                             display: "flex",
-                            justifyContent: "flex-end",
+                            justifyContent: "space-between",
                             alignItems: "center",
                         }}
                     >
@@ -35,13 +47,20 @@ function App() {
             </AppBar>
             <Grid container style={{ height: "100%" }}>
                 <Grid item sm={4}>
-                    <Gallery images={photos} />
+                    <Gallery
+                        allPoints={photos}
+                        onClickMiniGallery={setLastClickedMiniGalleryPointId}
+                        onHoverMiniGallery={setHoveredPointId}
+                    />
                 </Grid>
                 <Grid item sm={8}>
-                    <RealMap setImages={(images) => setPhotos(images)} />
+                    <RealMap
+                        setImages={(images) => setPhotos(images)}
+                        hoveredPointId={hoveredPointId}
+                    />
                 </Grid>
             </Grid>
-        </>
+        </div>
     );
 }
 
