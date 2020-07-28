@@ -319,6 +319,15 @@ const Map = ({ setImages, hoveredPointId }) => {
                             onClick={() =>
                                 panTo({ lat: selected.lat, lng: selected.lng })
                             }
+                            icon={{
+                                url: `/map-look.png`,
+                                origin: new window.google.maps.Point(0, 0),
+                                anchor: new window.google.maps.Point(150, 0),
+                                scaledSize: new window.google.maps.Size(
+                                    300,
+                                    300
+                                ),
+                            }}
                         />
                         <p>Searching for images and places nearby...</p>
                     </div>
