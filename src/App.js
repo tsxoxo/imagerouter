@@ -1,9 +1,9 @@
 import React from "react";
 import CssBaseline from "@material-ui/core/CssBaseline";
-
+import { useState } from "react";
 import "./App.css";
 
-import Map from "./Map";
+import RealMap from "./RealMap";
 import Gallery from "./Gallery";
 import {
     AppBar,
@@ -14,19 +14,30 @@ import {
 } from "@material-ui/core";
 
 function App() {
+    const [photos, setPhotos] = useState([]);
+    const [
+        lastClickedMiniGalleryPointId,
+        setLastClickedMiniGalleryPointId,
+    ] = useState(null);
+    const [hoveredPointId, setHoveredPointId] = useState(null);
     return (
-        <>
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                margin: "0",
+                padding: "0",
+            }}
+        >
             <CssBaseline />
             <AppBar position="static">
                 <Toolbar>
-                    <Typography style={{ flexGrow: 1 }} variant="h4">
-                        ImageRouter
-                    </Typography>
+                    <img src="/logo.png" alt="logo" width="120" height="70" />
                     <nav
                         style={{
                             // width: 500,
                             display: "flex",
-                            justifyContent: "flex-end",
+                            justifyContent: "space-between",
                             alignItems: "center",
                         }}
                     >
@@ -36,13 +47,20 @@ function App() {
             </AppBar>
             <Grid container style={{ height: "100%" }}>
                 <Grid item sm={4}>
-                    <Gallery />
+                    <Gallery
+                        allPoints={photos}
+                        onClickMiniGallery={setLastClickedMiniGalleryPointId}
+                        onHoverMiniGallery={setHoveredPointId}
+                    />
                 </Grid>
                 <Grid item sm={8}>
-                    <Map />
+                    <RealMap
+                        setImages={(images) => setPhotos(images)}
+                        hoveredPointId={hoveredPointId}
+                    />
                 </Grid>
             </Grid>
-        </>
+        </div>
     );
 }
 
