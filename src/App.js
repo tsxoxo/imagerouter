@@ -35,13 +35,12 @@ function App() {
                     <img src="/logo.png" alt="logo" width="120" height="70" />
                     <nav
                         style={{
-                            // width: 500,
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
                         }}
                     >
-                        My Routes
+                        My Places
                     </nav>
                 </Toolbar>
             </AppBar>

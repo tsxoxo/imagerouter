@@ -15,24 +15,13 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
     // get data from frontend
     // {points: [GOOGLE POINTS], images: [FLICKR IMAGES]}
-    const allPoints = {
-        places: req.body.points.map((place) => place.place_id),
-        images: req.body.images.map((image) => image.url_m),
-    };
+    const pointsThatWillBeSaved = {};
 
     const points = req.body.points;
     let images = req.body.images;
-    let alreadySavedImages = await db.readAllImages();
-    alreadySavedImages = alreadySavedImages.rows.map(
-        (savedImage) => savedImage.image
-    );
-    // remove images already inserted into DB
-    images = images.filter(
-        (image) => !alreadySavedImages.includes(image.url_m)
-    );
 
     // save google places to DB
-    points.map(async (point) => {
+    points.map((point) => {
         const {
             name,
             geometry: {
@@ -42,7 +31,6 @@ router.post("/", async (req, res) => {
             place_id,
         } = point;
 
-        console.log("points map", types);
         if (
             types.length === 0 ||
             types.find((type) =>
@@ -60,25 +48,27 @@ router.post("/", async (req, res) => {
                 ].includes(type)
             )
         ) {
-            try {
-                await db.createPlace({
-                    id: place_id,
-                    name,
-                    lat,
-                    lng,
-                    tags: types,
-                    is_natural: true,
-                    radius: 0,
-                });
-            } catch (err) {
-                // console.log("createPlace", err.message);
-            }
+            // save natural point to res obj
+            pointsThatWillBeSaved[place_id] = {
+                id: place_id,
+                name,
+                lat,
+                lng,
+                tags: types,
+                is_natural: true,
+                radius: 0,
+            };
+            db.createPlace({
+                id: place_id,
+                name,
+                lat,
+                lng,
+                tags: types,
+                is_natural: true,
+                radius: 0,
+            });
         }
     });
-
-    // get all current places
-    const { rows } = await db.readPlaces({});
-    const places = rows;
 
     // create obj to access the images more targeted
     const imagesObj = images.reduce((cur, val) => {
@@ -88,27 +78,43 @@ router.post("/", async (req, res) => {
 
     const newPoints = new Set();
     // attribute images to existing places
-    places.forEach((place) => {
-        images.forEach(async (image) => {
+    points.forEach((place) => {
+        images.forEach((image) => {
             if (
                 distance(
                     place.lat,
                     place.lng,
                     image.latitude,
                     image.longitude
-                ) < 0.5
+                ) < 0.1
             ) {
-                try {
-                    await db.createImage({
+                // attach image to natural point on res obj
+                if (pointsThatWillBeSaved[place.id].images) {
+                    pointsThatWillBeSaved[place.id].images.push({
                         place_id: place.id,
                         image: image.url_m,
                         lat: image.latitude,
                         lng: image.longitude,
                         title: image.title,
                     });
-                } catch (err) {
-                    // console.log("createImage", err.message);
+                } else {
+                    pointsThatWillBeSaved[place.id].images = [
+                        {
+                            place_id: place.id,
+                            image: image.url_m,
+                            lat: image.latitude,
+                            lng: image.longitude,
+                            title: image.title,
+                        },
+                    ];
                 }
+                db.createImage({
+                    place_id: place.id,
+                    image: image.url_m,
+                    lat: image.latitude,
+                    lng: image.longitude,
+                    title: image.title,
+                });
             } else {
                 // if there are no previously saved places to
                 // attribute the image to, then add to list of newPoints to save as Places
@@ -118,7 +124,6 @@ router.post("/", async (req, res) => {
     });
 
     const newClusteredPoints = [];
-
     // bundle points into clusters of points
     [...newPoints].map((point, index) => {
         point = JSON.parse(point);
@@ -133,7 +138,7 @@ router.post("/", async (req, res) => {
                     point.longitude,
                     otherPoint.latitude,
                     otherPoint.longitude
-                ) < 0.5 &&
+                ) < 0.1 &&
                 point.id !== otherPoint.id
             ) {
                 newClusteredPoints[index].add(otherPoint.id);
@@ -143,23 +148,24 @@ router.post("/", async (req, res) => {
 
     // find which clusters are subsets that need removal
     const clustersToRemove = new Set();
-    newClusteredPoints.forEach((cluster) => {
-        newClusteredPoints.forEach((otherCluster) => {
-            if (
-                isSuperset(cluster, otherCluster) &&
-                !eqSet(cluster, otherCluster)
-            ) {
-                clustersToRemove.add(JSON.stringify([...otherCluster]));
+    newClusteredPoints.forEach((cluster, index1) => {
+        newClusteredPoints.forEach((otherCluster, index2) => {
+            if (index1 !== index2) {
+                if (
+                    isSuperset(cluster, otherCluster) ||
+                    eqSet(cluster, otherCluster)
+                ) {
+                    clustersToRemove.add(JSON.stringify([...otherCluster]));
+                }
             }
         });
     });
 
     // save clusters as places and add images to those places
-    await [...newClusteredPoints].map(async (cluster) => {
-        let newPlace;
-
+    [...newClusteredPoints].map((cluster) => {
         // if cluster is not in clustersToRemove saved to DB
         if (!clustersToRemove.has(JSON.stringify([...cluster]))) {
+            // console.log("cluster after", cluster);
             // get radius by getting the distance between the 2 furthest points within the cluster
             let maxDistance = 0;
             if (cluster.size > 1) {
@@ -179,65 +185,69 @@ router.post("/", async (req, res) => {
             }
             // pick the first point as the central location of the place
             let centralPoint = imagesObj[[...cluster][0]];
+            const randomString = cryptoRandomString({
+                length: 10,
+            });
+            pointsThatWillBeSaved[randomString] = {
+                id: randomString,
+                lat: centralPoint.latitude,
+                lng: centralPoint.longitude,
+                is_natural: false,
+                radius: maxDistance,
+            };
 
             // save to place to DB
-            try {
-                const { rows } = await db.createPlace({
-                    id: cryptoRandomString({
-                        length: 10,
-                    }),
-                    lat: centralPoint.latitude,
-                    lng: centralPoint.longitude,
-                    is_natural: false,
-                    radius: maxDistance,
-                });
-                newPlace = rows[0];
-            } catch (err) {
-                // console.log(err.message);
-            }
+            const { rows } = db.createPlace({
+                id: randomString,
+                lat: centralPoint.latitude,
+                lng: centralPoint.longitude,
+                is_natural: false,
+                radius: maxDistance,
+            });
 
             // insert images to DB connecting to saved Point
             const filteredImages = images.filter((image) => {
                 return [...cluster].includes(image.id);
             });
 
-            await Promise.all(
-                filteredImages.map(async (image) => {
-                    try {
-                        await db.createImage({
-                            place_id: newPlace.id,
-                            image: image.url_m,
-                            lat: image.latitude,
-                            lng: image.longitude,
-                            title: image.title,
-                        });
-                    } catch (err) {
-                        // console.log(err.message);
-                    }
-                })
-            );
+            filteredImages.map((image) => {
+                if (!pointsThatWillBeSaved[randomString].images) {
+                    pointsThatWillBeSaved[randomString].images = [
+                        {
+                            id: randomString,
+                            img_url: image.url_m,
+                            imag_lat: image.latitude,
+                            img_lng: image.longitude,
+                            img_title: image.title,
+                        },
+                    ];
+                } else {
+                    pointsThatWillBeSaved[randomString].images.push({
+                        id: randomString,
+                        img_url: image.url_m,
+                        imag_lat: image.latitude,
+                        img_lng: image.longitude,
+                        img_title: image.title,
+                    });
+                }
+            });
+            filteredImages.map((image) => {
+                try {
+                    db.createImage({
+                        place_id: randomString,
+                        image: image.url_m,
+                        lat: image.latitude,
+                        lng: image.longitude,
+                        title: image.title,
+                    });
+                } catch (err) {
+                    // console.log(err.message);
+                }
+            });
         }
     });
 
-    // due to the async calls for adding the images to places
-    // not really stopping on the await, sleep just to make sure all
-    // of them are added before getting all places
-    sleep(10000);
-    let allPointsData = await db.getRequestedPlacesAndImages(allPoints);
-    allPointsData = allPointsData.rows;
-    const allPointsToSend = {};
-    for (let i = 0; i < allPointsData.length; i++) {
-        if (!allPointsToSend[allPointsData[i].id]) {
-            allPointsToSend[allPointsData[i].id] = {
-                ...allPointsData[i],
-                images: [allPointsData[i]],
-            };
-        } else {
-            allPointsToSend[allPointsData[i].id].images.push(allPointsData[i]);
-        }
-    }
-
-    return res.json(allPointsToSend);
+    return res.json(pointsThatWillBeSaved);
 });
 
 router.get("/:id", async (req, res) => {

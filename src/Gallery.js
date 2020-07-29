@@ -40,7 +40,8 @@ const MiniGallery = (props) => {
             className={classes.gridList}
             cols={1.5}
             id={`${pointId}`}
-            // onMouseEnter={e => onHover(e.currentTarget.id)}
+            onMouseEnter={(e) => (onHover ? onHover(e.currentTarget.id) : null)}
+            onMouseLeave={() => (onHover ? onHover(null) : null)}
         >
             {images &&
                 images.map((image, ind) => {
@@ -78,19 +79,20 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
     const classes = useStyles();
     const inputEl = React.useRef(null);
     // GALLERY
-    const onHover = (e) => {
-        // console.log("onHover e", e.currentTarget.id);
+    // const onHover = (e) => {
+    //     // console.log("onHover e", e.currentTarget.id);
 
-        inputEl.current && inputEl.current.classList.remove(".active");
-        const place_id = e.target.key;
-        const hoveredPoint = document.getElementById(place_id);
-        inputEl.current && hoveredPoint.classList.add("active");
-        inputEl.current = hoveredPoint;
-    };
+    //     inputEl.current && inputEl.current.classList.remove(".active");
+    //     const place_id = e.target.key;
+    //     const hoveredPoint = document.getElementById(place_id);
+    //     inputEl.current && hoveredPoint.classList.add("active");
+    //     inputEl.current = hoveredPoint;
+    // };
 
     return (
         <div className={classes.root}>
-            {Object.keys(allPoints).length > 0 &&
+            {allPoints &&
+                Object.keys(allPoints).length > 0 &&
                 Object.keys(allPoints).map((pointId, ind) => {
                     const point = allPoints[pointId];
 
@@ -104,7 +106,8 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
                         />
                     );
                 })}
-            {allPoints.length === 0 &&
+            {allPoints &&
+                Object.keys(allPoints).length === 0 &&
                 [1, 2, 3, 4, 5].map((index) => (
                     <MiniGallery
                         key={index}
