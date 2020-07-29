@@ -90,7 +90,8 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
 
     return (
         <div className={classes.root}>
-            {Object.keys(allPoints).length > 0 &&
+            {allPoints &&
+                Object.keys(allPoints).length > 0 &&
                 Object.keys(allPoints).map((pointId, ind) => {
                     const point = allPoints[pointId];
 
@@ -104,7 +105,8 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
                         />
                     );
                 })}
-            {allPoints.length === 0 &&
+            {allPoints &&
+                Object.keys(allPoints).length === 0 &&
                 [1, 2, 3, 4, 5].map((index) => (
                     <MiniGallery
                         key={index}
