@@ -83,7 +83,6 @@ const Map = ({ setImages, hoveredPointId }) => {
     }, []);
 
     const panTo = React.useCallback(({ lat, lng }) => {
-        console.log("panning to:", lat, lng);
         mapRef.current.panTo({ lat, lng });
         mapRef.current.setZoom(14);
     }, []);
@@ -138,9 +137,35 @@ const Map = ({ setImages, hoveredPointId }) => {
         },
         [panTo, setImages]
     );
-    const onMarkerClick = (ind) => {
-        setClickedPlaceIndex(ind);
+
+    const renderPointHighlight = (point) => {
+        let pointHighlight = null;
+        const pointCenter = {
+            lat: Number(point.lat),
+            lng: Number(point.lng),
+        };
+
+        const iconStyle = {
+            path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+            scale: 9,
+            strokeColor: "#5555FF",
+            strokeWeight: 2,
+            fillColor: "white",
+            fillOpacity: 0.8,
+        };
+        pointHighlight = (
+            <Marker
+                key={point.id}
+                shape="MarkerShapeRect"
+                position={pointCenter}
+                icon={iconStyle}
+                zIndex={1000}
+                onClick={() => panTo(pointCenter)}
+            />
+        );
+        return pointHighlight;
     };
+
     const renderInfoWindow = (point) => {
         let infoWindow = null;
         const divStyle = {
@@ -247,7 +272,7 @@ const Map = ({ setImages, hoveredPointId }) => {
                     </div>
                 </InfoWindow>
             ) : null}
-            {hoveredPointId && renderInfoWindow(allPoints[hoveredPointId])}
+            {hoveredPointId && renderPointHighlight(allPoints[hoveredPointId])}
             {Object.keys(allPoints).length > 0 && renderAllPoints()}
         </GoogleMap>
     );
