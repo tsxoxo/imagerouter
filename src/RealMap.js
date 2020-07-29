@@ -10,6 +10,7 @@ import axios from "./axios";
 import Search from "./Search";
 
 import mapStyles from "./mapStyles";
+import mockData from "./mockApiPlaceRes";
 
 const containerStyle = {
     width: "100%",
@@ -29,7 +30,7 @@ const center = {
 const libraries = ["places"];
 const GMAPS_INITIAL_SEARCH_RADIUS_METERS = 5000;
 
-const fetchGoogleMaps = (startingPoint) => {
+const fetchGoogleMaps = startingPoint => {
     return new Promise((resolve, reject) => {
         const NearbySearchService = new window.google.maps.places.PlacesService(
             // document.getElementsByClassName("mapContainer")[0]
@@ -65,11 +66,11 @@ const Map = ({ setImages, hoveredPointId }) => {
     const [startingPoint, setStartingPoint] = useState({});
 
     const photoPointOptions = {
-        strokeColor: "#0000FF",
-        strokeOpacity: 0.8,
+        strokeColor: "#1212bc",
+        strokeOpacity: 0.9,
         strokeWeight: 2,
-        fillColor: "#0000FF",
-        fillOpacity: 0.35,
+        fillColor: "#bbbbFF",
+        fillOpacity: 0.25,
         clickable: true,
         draggable: false,
         editable: false,
@@ -78,7 +79,7 @@ const Map = ({ setImages, hoveredPointId }) => {
     };
 
     const mapRef = React.useRef();
-    const onMapLoad = React.useCallback((map) => {
+    const onMapLoad = React.useCallback(map => {
         mapRef.current = map;
     }, []);
 
@@ -90,6 +91,12 @@ const Map = ({ setImages, hoveredPointId }) => {
 
     const getMapPoints = React.useCallback(
         async ({ latLng, lat, lng }) => {
+            // ####### FOR TESTING #########
+            // setAllPoints(mockData);
+            // // set images to state
+            // setImages(mockData);
+            // return;
+
             let initialLocation;
             if (latLng) {
                 initialLocation = {
@@ -129,23 +136,26 @@ const Map = ({ setImages, hoveredPointId }) => {
             });
             console.log("allPoints", allPoints);
             // format the points into an array of single points
+            // ### Keeping it as an object seems the easier way for crossreferencing elemnts by Id
             const pointsToDisplay = [];
             for (let i in allPoints) {
                 pointsToDisplay.push(allPoints[i]);
             }
             console.log("pointsToDisplay", pointsToDisplay);
-            setAllPoints(pointsToDisplay);
+            console.log("allPoints", JSON.stringify(allPoints));
+            // setAllPoints(pointsToDisplay);
+            setAllPoints(allPoints);
             // set images to state
             setImages(allPoints);
             setSelected(null);
         },
         [panTo, setImages]
     );
-    const onMarkerClick = (ind) => {
+    const onMarkerClick = ind => {
         setClickedPlaceIndex(ind);
     };
-    const renderInfoWindow = (point) => {
-        let infoWindow = null;
+    const renderPointHighlight = point => {
+        let pointHighlight = null;
         const divStyle = {
             background: `white`,
             border: `1px solid #ccc`,
@@ -158,18 +168,36 @@ const Map = ({ setImages, hoveredPointId }) => {
         console.log(point);
         // const place = places[clickedPlaceIndex];
         // if (clickedPlaceIndex > -1) {
-        infoWindow = (
-            <InfoWindow
+        const iconStyle = {
+            path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+            scale: 9,
+            strokeColor: "#5555FF",
+            strokeWeight: 2,
+            fillColor: "white",
+            fillOpacity: 0.8,
+        };
+        pointHighlight = (
+            <Marker
+                key={point.id}
+                shape="MarkerShapeRect"
                 position={pointCenter}
-                // onCloseClick={() => setClickedPlaceIndex(-1)}
-            >
-                <div style={divStyle}>
-                    <h1>{point.id}</h1>
-                </div>
-            </InfoWindow>
+                icon={iconStyle}
+                zIndex={1000}
+                onClick={() => panTo(pointCenter)}
+            />
         );
+        // pointHighlight = (
+        //     <InfoWindow
+        //         position={pointCenter}
+        //         // onCloseClick={() => setClickedPlaceIndex(-1)}
+        //     >
+        //         <div style={divStyle}>
+        //             <h1>{point.id}</h1>
+        //         </div>
+        //     </InfoWindow>
+        // );
         // }
-        return infoWindow;
+        return pointHighlight;
     };
 
     const renderAllPoints = () => {
@@ -217,7 +245,7 @@ const Map = ({ setImages, hoveredPointId }) => {
             mapContainerClassName="mapContainer"
             center={center}
             zoom={10}
-            onClick={(e) => getMapPoints(e)}
+            onClick={e => getMapPoints(e)}
             onLoad={onMapLoad}
             options={options}
         >
@@ -255,7 +283,7 @@ const Map = ({ setImages, hoveredPointId }) => {
                     </div>
                 </InfoWindow>
             ) : null}
-            {hoveredPointId && renderInfoWindow(allPoints[hoveredPointId])}
+            {hoveredPointId && renderPointHighlight(allPoints[hoveredPointId])}
             {Object.keys(allPoints).length > 0 && renderAllPoints()}
         </GoogleMap>
     );

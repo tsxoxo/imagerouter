@@ -7,7 +7,7 @@ import GridListTileBar from "@material-ui/core/GridListTileBar";
 import IconButton from "@material-ui/core/IconButton";
 import StarBorderIcon from "@material-ui/icons/StarBorder";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
     root: {
         display: "flex",
         flexWrap: "wrap",
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
             "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)",
     },
 }));
-const MiniGallery = (props) => {
+const MiniGallery = props => {
     const { images, onHover, pointId } = props;
     const classes = useStyles();
 
@@ -40,7 +40,8 @@ const MiniGallery = (props) => {
             className={classes.gridList}
             cols={1.5}
             id={`${pointId}`}
-            // onMouseEnter={e => onHover(e.currentTarget.id)}
+            onMouseEnter={e => (onHover ? onHover(e.currentTarget.id) : null)}
+            onMouseLeave={() => (onHover ? onHover(null) : null)}
         >
             {images &&
                 images.map((image, ind) => {
@@ -78,15 +79,15 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
     const classes = useStyles();
     const inputEl = React.useRef(null);
     // GALLERY
-    const onHover = (e) => {
-        // console.log("onHover e", e.currentTarget.id);
+    // const onHover = e => {
+    //     // console.log("onHover e", e.currentTarget.id);
 
-        inputEl.current && inputEl.current.classList.remove(".active");
-        const place_id = e.target.key;
-        const hoveredPoint = document.getElementById(place_id);
-        inputEl.current && hoveredPoint.classList.add("active");
-        inputEl.current = hoveredPoint;
-    };
+    //     inputEl.current && inputEl.current.classList.remove(".active");
+    //     const place_id = e.target.key;
+    //     const hoveredPoint = document.getElementById(place_id);
+    //     inputEl.current && hoveredPoint.classList.add("active");
+    //     inputEl.current = hoveredPoint;
+    // };
 
     return (
         <div className={classes.root}>
@@ -105,7 +106,7 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
                     );
                 })}
             {allPoints.length === 0 &&
-                [1, 2, 3, 4, 5].map((index) => (
+                [1, 2, 3, 4, 5].map(index => (
                     <MiniGallery
                         key={index}
                         classAdded="default-image"
