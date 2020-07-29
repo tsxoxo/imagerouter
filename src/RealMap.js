@@ -130,7 +130,7 @@ const Map = ({ setImages, hoveredPointId }) => {
             for (let i in pointsThatWillBeSaved) {
                 pointsToDisplay.push(pointsThatWillBeSaved[i]);
             }
-            setAllPoints(pointsToDisplay);
+            setAllPoints(pointsThatWillBeSaved);
             // set images to state
             setImages(pointsThatWillBeSaved);
             setSelected(null);
