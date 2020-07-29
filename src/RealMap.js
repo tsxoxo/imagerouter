@@ -29,7 +29,7 @@ const center = {
 const libraries = ["places"];
 const GMAPS_INITIAL_SEARCH_RADIUS_METERS = 5000;
 
-const fetchGoogleMaps = (startingPoint) => {
+const fetchGoogleMaps = startingPoint => {
     return new Promise((resolve, reject) => {
         const NearbySearchService = new window.google.maps.places.PlacesService(
             // document.getElementsByClassName("mapContainer")[0]
@@ -78,13 +78,14 @@ const Map = ({ setImages, hoveredPointId }) => {
     };
 
     const mapRef = React.useRef();
-    const onMapLoad = React.useCallback((map) => {
+    const higlightedMiniGalleryRef = React.useRef(null);
+    const onMapLoad = React.useCallback(map => {
         mapRef.current = map;
     }, []);
 
     const panTo = React.useCallback(({ lat, lng }) => {
         mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(14);
+        // mapRef.current.setZoom(14);
     }, []);
 
     const getMapPoints = React.useCallback(
@@ -138,7 +139,7 @@ const Map = ({ setImages, hoveredPointId }) => {
         [panTo, setImages]
     );
 
-    const renderPointHighlight = (point) => {
+    const renderPointHighlight = point => {
         let pointHighlight = null;
         const pointCenter = {
             lat: Number(point.lat),
@@ -165,8 +166,23 @@ const Map = ({ setImages, hoveredPointId }) => {
         );
         return pointHighlight;
     };
-
-    const renderInfoWindow = (point) => {
+    const handlePointClick = pointId => {
+        higlightedMiniGalleryRef.current &&
+            higlightedMiniGalleryRef.current.classList.remove(
+                "highlightMiniGallery"
+            );
+        const highlightedMiniGallery = document.getElementById(pointId);
+        const topPos = Number(highlightedMiniGallery.offsetTop);
+        const appBarHeight = Number(
+            document.getElementById("myAppBar").offsetHeight
+        );
+        document.getElementById("galleryContainer").scrollTop =
+            topPos - appBarHeight;
+        higlightedMiniGalleryRef.current &&
+            highlightedMiniGallery.classList.add("highlightMiniGallery");
+        higlightedMiniGalleryRef.current = highlightedMiniGallery;
+    };
+    const renderInfoWindow = point => {
         let infoWindow = null;
         const divStyle = {
             background: `white`,
@@ -202,7 +218,10 @@ const Map = ({ setImages, hoveredPointId }) => {
                     <Marker
                         key={point.id}
                         position={pointCenter}
-                        onClick={() => panTo(pointCenter)}
+                        onClick={() => {
+                            handlePointClick(point.id);
+                            panTo(pointCenter);
+                        }}
                     />
                 );
             } else {
@@ -214,7 +233,10 @@ const Map = ({ setImages, hoveredPointId }) => {
                         key={point.id}
                         center={pointCenter}
                         options={options}
-                        onClick={() => panTo(pointCenter)}
+                        onClick={() => {
+                            handlePointClick(point.id);
+                            panTo(pointCenter);
+                        }}
                     />
                 );
             }
@@ -234,7 +256,7 @@ const Map = ({ setImages, hoveredPointId }) => {
             mapContainerClassName="mapContainer"
             center={center}
             zoom={10}
-            onClick={(e) => getMapPoints(e)}
+            onClick={e => getMapPoints(e)}
             onLoad={onMapLoad}
             options={options}
         >

@@ -30,7 +30,7 @@ function App() {
             }}
         >
             <CssBaseline />
-            <AppBar position="static">
+            <AppBar position="static" id="myAppBar">
                 <Toolbar>
                     <img src="/logo.png" alt="logo" width="120" height="70" />
                     <nav
@@ -40,7 +40,7 @@ function App() {
                             alignItems: "center",
                         }}
                     >
-                        My Places
+                        <Typography variant="h6">My Places</Typography>
                     </nav>
                 </Toolbar>
             </AppBar>
@@ -54,7 +54,7 @@ function App() {
                 </Grid>
                 <Grid item sm={8}>
                     <RealMap
-                        setImages={(images) => setPhotos(images)}
+                        setImages={images => setPhotos(images)}
                         hoveredPointId={hoveredPointId}
                     />
                 </Grid>

@@ -7,7 +7,7 @@ import GridListTileBar from "@material-ui/core/GridListTileBar";
 import IconButton from "@material-ui/core/IconButton";
 import StarBorderIcon from "@material-ui/icons/StarBorder";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
     root: {
         display: "flex",
         flexWrap: "wrap",
@@ -15,7 +15,7 @@ const useStyles = makeStyles((theme) => ({
         overflowX: "hidden",
         overflowY: "scroll",
         backgroundColor: "#232323",
-        height: "90vh",
+        height: "100vh",
     },
     gridList: {
         flexWrap: "nowrap",
@@ -30,23 +30,30 @@ const useStyles = makeStyles((theme) => ({
             "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)",
     },
 }));
-const MiniGallery = (props) => {
+const MiniGallery = props => {
     const { images, onHover, pointId } = props;
     const classes = useStyles();
 
     return (
         <GridList
-            cellHeight={180}
+            cellHeight={200}
             className={classes.gridList}
             cols={1.5}
             id={`${pointId}`}
-            onMouseEnter={(e) => (onHover ? onHover(e.currentTarget.id) : null)}
+            onMouseEnter={e => (onHover ? onHover(e.currentTarget.id) : null)}
             onMouseLeave={() => (onHover ? onHover(null) : null)}
+            style={{ justifyContent: "flex-start", alignItems: "flex-start" }}
         >
             {images &&
                 images.map((image, ind) => {
                     return image.img_url ? (
-                        <GridListTile key={ind}>
+                        <GridListTile
+                            key={ind}
+                            // style={{
+                            //     justifyContent: "flex-start",
+                            //     alignItems: "flex-start",
+                            // }}
+                        >
                             <img
                                 className={props.classAdded}
                                 src={image.img_url}
@@ -90,7 +97,7 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
     // };
 
     return (
-        <div className={classes.root}>
+        <div className={classes.root} id="galleryContainer">
             {allPoints &&
                 Object.keys(allPoints).length > 0 &&
                 Object.keys(allPoints).map((pointId, ind) => {
@@ -108,7 +115,7 @@ const Gallery = ({ allPoints, onClickMiniGallery, onHoverMiniGallery }) => {
                 })}
             {allPoints &&
                 Object.keys(allPoints).length === 0 &&
-                [1, 2, 3, 4, 5].map((index) => (
+                [1, 2, 3, 4, 5].map(index => (
                     <MiniGallery
                         key={index}
                         classAdded="default-image"

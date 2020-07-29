@@ -37,6 +37,11 @@
     }
 }
 
+.highlightMiniGallery {
+    border-left: 10px solid white;
+    /* box-shadow: inset 0px 0px 0px 10px #fff; */
+}
+
 .search {
     position: absolute;
     top: 1rem;
