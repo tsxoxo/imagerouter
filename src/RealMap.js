@@ -119,24 +119,21 @@ const Map = ({ setImages, hoveredPointId }) => {
             // send req to gmaps api with lat/lng
             const points = await fetchGoogleMaps(initialLocation);
             // send both arrays to backend api POST /place
-            console.log("both apis", {
-                points: points,
-                images: photosArr,
-            });
-            const { data: allPoints } = await axios.post("/api/place", {
-                points: points,
-                images: photosArr.slice(0, 50),
-            });
-            console.log("allPoints", allPoints);
+            const { data: pointsThatWillBeSaved } = await axios.post(
+                "/api/place",
+                {
+                    points: points,
+                    images: photosArr,
+                }
+            );
             // format the points into an array of single points
             const pointsToDisplay = [];
-            for (let i in allPoints) {
-                pointsToDisplay.push(allPoints[i]);
+            for (let i in pointsThatWillBeSaved) {
+                pointsToDisplay.push(pointsThatWillBeSaved[i]);
             }
-            console.log("pointsToDisplay", pointsToDisplay);
             setAllPoints(pointsToDisplay);
             // set images to state
-            setImages(allPoints);
+            setImages(pointsThatWillBeSaved);
             setSelected(null);
         },
         [panTo, setImages]
@@ -155,14 +152,9 @@ const Map = ({ setImages, hoveredPointId }) => {
             lat: Number(point.lat),
             lng: Number(point.lng),
         };
-        console.log(point);
-        // const place = places[clickedPlaceIndex];
-        // if (clickedPlaceIndex > -1) {
+
         infoWindow = (
-            <InfoWindow
-                position={pointCenter}
-                // onCloseClick={() => setClickedPlaceIndex(-1)}
-            >
+            <InfoWindow position={pointCenter}>
                 <div style={divStyle}>
                     <h1>{point.id}</h1>
                 </div>
@@ -202,7 +194,7 @@ const Map = ({ setImages, hoveredPointId }) => {
                 );
             }
         });
-        mapRef.current.setZoom(12.5);
+        mapRef.current.setZoom(12);
 
         return elements;
     };
