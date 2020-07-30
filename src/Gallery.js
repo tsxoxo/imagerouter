@@ -15,7 +15,7 @@ const useStyles = makeStyles((theme) => ({
         overflowX: "hidden",
         overflowY: "scroll",
         backgroundColor: "#232323",
-        height: "90vh",
+        height: "100vh",
     },
     gridList: {
         flexWrap: "nowrap",
