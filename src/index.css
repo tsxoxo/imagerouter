@@ -6,9 +6,10 @@ body,
     height: 100%;
 }
 
-#root,
-.App {
-}
+/* .highlightMiniGallery {
+    box-sizing: border-box;
+    border-left: 10px solid white;
+} */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
