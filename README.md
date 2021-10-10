@@ -8,6 +8,10 @@
 
 ### General Idea
 
+
+https://user-images.githubusercontent.com/59713582/136708871-04e57a81-7bf0-4a19-9b21-712667bbb690.mov
+
+
 This app lets you pick a spot on a world map and shows you local photos from around there. The map data comes from Google Maps, the photos from Flickr.
 
 Together with [João Santos](https://github.com/JoMiguelSantos), we made this for our final project of the full stack web development bootcamp at [SPICED Academy](https://www.spiced-academy.com/en). 
